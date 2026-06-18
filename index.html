@@ -1,109 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChanceField</title>
     <link rel="stylesheet" href="frontend/style.css">
+    <link rel="stylesheet" href="frontend/textareastyle.css">
 </head>
+
 <body>
 
-<div class="scanline"></div>
+    <div class="scanline"></div>
 
-<header>
-    <h1>ChanceField</h1>
-    <p>> Welcome to the terminal.</p>
-</header>
+    <header>
+        <h1>ChanceField</h1>
+        <p>> PROBABILITIES!</p>
+    </header>
 
-<nav>
-    <a href="frontend/login.html">LOGIN</a>
-    <a href="frontend/register.html">REGISTER</a>
-    <a href="frontend/account.html">ACCOUNT</a>
-    <a href="#learn">LEARN</a>
-    <a href="#practice">PRACTICE</a>
-    <a href="#ranking">RANKING</a>
-</nav>
+    <nav>
+        <a href="frontend/login.html">LOGIN</a>
+        <a href="frontend/register.html">REGISTER</a>
+        <a href="frontend/account.html">ACCOUNT</a>
+        <a href="#learn">LEARN</a>
+        <a href="#practice">PRACTICE</a>
+        <a href="#ranking">RANKING</a>
+    </nav>
 
-<main>
+    <main>
 
-<!-- <section id="account" class="window">
-    <h2>ACCOUNT</h2>
+        <div id="learn-container"></div>
+        <div id="practice-container"></div>
+        <div id="ranking-container"></div>
 
-    <p>Name: Player1</p>
-    <p>Level: 12</p>
-    <p>XP: 5420</p>
-    <p>Rank: #57</p>
+    </main>
 
-    <div class="xp-bar">
-        <div class="xp-fill"></div>
-    </div>
-</section> -->
+    <div class="textarea-wrapper">
 
-<section id="learn" class="window">
-    <h2>LEARN</h2>
+        <h2>SageMath Playground</h2>
 
-    <ul>
-        <li>Level 1 - Variables</li>
-        <li>Level 2 - Loops</li>
-        <li>Level 3 - Recursion</li>
-        <li>Level 4 - Dynamic Programming</li>
-        <li>Level 5 - Graph Theory</li>
-    </ul>
-</section>
+        <p>
+            Try SageMath directly in your browser.
+        </p>
 
-<section id="practice" class="window">
-    <h2>PRACTICE</h2>
+        <textarea id="sage-code" rows="5" cols="70" placeholder="Example: ">3 + 5</textarea>
 
-    <div class="mission">
-        <h3>MISSION #101</h3>
-        <p>Fibonacci Explorer</p>
-        <p>Reward: +50 XP</p>
-        <button>START</button>
+
+        <button onclick="runSage()">
+            Run
+        </button>
+
+        <button onclick="clearSage()">
+            Clear
+        </button>
+
+        <h3>Output</h3>
+
+        <pre id="sage-output"></pre>
+
     </div>
 
-    <div class="mission">
-        <h3>MISSION #102</h3>
-        <p>Maze Pathfinder</p>
-        <p>Reward: +100 XP</p>
-        <button>START</button>
-    </div>
-</section>
+    <footer>
+        <p>> aukay</p>
+    </footer>
 
-<section id="ranking" class="window">
-    <h2>RANKING</h2>
+    <script>
+        async function loadSection(id, url) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    document.getElementById(id).innerHTML = await response.text();
+                } else {
+                    console.error(`Failed to load ${url}: ${response.status}`);
+                }
+            } catch (error) {
+                console.error(`Error loading ${url}:`, error);
+            }
+        }
 
-    <table>
-        <tr>
-            <th>#</th>
-            <th>User</th>
-            <th>XP</th>
-        </tr>
-
-        <tr>
-            <td>1</td>
-            <td>Alice</td>
-            <td>15420</td>
-        </tr>
-
-        <tr>
-            <td>2</td>
-            <td>Bob</td>
-            <td>14810</td>
-        </tr>
-
-        <tr>
-            <td>3</td>
-            <td>Player1</td>
-            <td>14500</td>
-        </tr>
-    </table>
-</section>
-
-</main>
-
-<footer>
-    <p>> SYSTEM ONLINE</p>
-</footer>
-
+        document.addEventListener("DOMContentLoaded", () => {
+            loadSection("learn-container", "frontend/learn.html");
+            loadSection("practice-container", "frontend/practice.html");
+            loadSection("ranking-container", "frontend/ranking.html");
+        });
+    </script>
+    <script src="frontend/script.js"></script>
 </body>
+
 </html>
