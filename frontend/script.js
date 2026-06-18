@@ -5,7 +5,7 @@ async function runSage() {
     outputElement.textContent = "Running...";
 
     try {
-        const response = await fetch("http://localhost:8000/run", {
+        const response = await fetch("/run", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

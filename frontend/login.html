@@ -10,15 +10,49 @@
 <div class="window" style="max-width:500px;margin:100px auto;">
     <h2>LOGIN</h2>
 
-    <input type="text" placeholder="Username">
-    <input type="password" placeholder="Password">
+    <input type="text" id="login-username" placeholder="Username" required>
+    <input type="password" id="login-password" placeholder="Password" required>
 
-    <button>LOGIN</button>
+    <button onclick="handleLogin()">LOGIN</button>
 
     <br><br>
-
-    <a href="../index.html">← Back Home</a>
+    <a href="/">← Back Home</a>
 </div>
 
+<script>
+async function handleLogin() {
+    const usernameElement = document.getElementById('login-username');
+    const passwordElement = document.getElementById('login-password');
+
+    if (!usernameElement.value || !passwordElement.value) {
+        alert("Please enter both username and password.");
+        return;
+    }
+
+    // Matches the application/x-www-form-urlencoded header the backend reads
+    const details = new URLSearchParams();
+    details.append('username', usernameElement.value);
+    details.append('password', passwordElement.value);
+
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: details
+        });
+
+        const result = await response.text();
+        if (result === "7") {
+            alert("Login Successful!");
+            window.location.href = "/"; // Directs user back to main application entrypoint
+        } else {
+            alert("Invalid credentials.");
+        }
+    } catch (error) {
+        console.error("Error during authentication request:", error);
+        alert("Could not connect to the authentication server.");
+    }
+}
+</script>
 </body>
 </html>
