@@ -12,10 +12,15 @@
             <button class="oj-btn" onclick="subAns('{{id}}')">Submit A Solution!</button>
             <div class="oj-panel">
                 <div class="oj-head">Problem Info</div>
-                <div class="oj-body">
-                    <p><strong>★ Score:</strong> {{xp}}</p>
-                    <p><strong>⌛ Time Limit:</strong> 2s</p>
-                    <p><strong>🖴 Memory Limit:</strong> 256MB</p>
+                    <div class="oj-body">
+                        <p><strong>★ Score:</strong> {{xp}}</p>
+                        <p><strong>⌛ Time Limit:</strong> 2s</p>
+                        <p><strong>🖴 Memory Limit:</strong> 256MB</p>
+                        <div class="oj-panel">
+                        <div class="oj-head">Status</div>
+                        <div class="oj-body">
+                        <p><strong>{{status}}</strong></p> </div>
+                    </div>
                 </div>
             </div>
         </aside>

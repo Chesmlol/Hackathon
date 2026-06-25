@@ -7,6 +7,7 @@
     <title>ChanceField</title>
     <link rel="stylesheet" href="frontend/style.css">
     <link rel="stylesheet" href="frontend/textareastyle.css">
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
 </head>
 
 <body>
@@ -32,6 +33,8 @@
         <div id="learn-container"></div>
         <!-- <div id="practice-container"></div> -->
         <div id="ranking-container"></div>
+
+        <div id="sage-container" class="window"></div>
 
     </main>
 
@@ -69,7 +72,16 @@
             try {
                 const response = await fetch(url);
                 if (response.ok) {
-                    document.getElementById(id).innerHTML = await response.text();
+                    const html = await response.text();
+                    document.getElementById(id).innerHTML = html;
+                    // If we just loaded the sage cell fragment, initialize SageCell
+                    if (id === 'sage-container' && window.sagecell) {
+                        try {
+                            sagecell.makeSagecell({ inputLocation: '#sage-container .sage' });
+                        } catch (e) {
+                            console.error('Failed to initialize sagecell:', e);
+                        }
+                    }
                 } else {
                     console.error(`Failed to load ${url}: ${response.status}`);
                 }
@@ -82,6 +94,7 @@
             loadSection("learn-container", "frontend/learn.html");
             loadSection("practice-container", "frontend/practice.html");
             loadSection("ranking-container", "frontend/ranking.html");
+            loadSection("sage-container", "frontend/sagecell.html");
         });
     </script>
     <script src="frontend/script.js"></script>

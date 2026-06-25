@@ -162,6 +162,33 @@ def submit():
         
         return {"success": True, "msg": f"Correct! +{m[1]} XP earned."}
 
+@app.route("/problem/<id>")
+def problem_page(id):
+    u = get_u()
+    # 1. Fetch Problem
+    with sqlite3.connect(DB_U) as c:
+        m = c.execute("SELECT title, xp, statement FROM initial_misions WHERE id=?", (id,)).fetchone()
+        
+        # 2. Check if Solved
+        solved = False
+        if u:
+            if c.execute("SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, id)).fetchone():
+                solved = True
+    
+    if not m: return "404", 404
+    
+    # 3. Prepare display status
+    status_msg = "✅ Solved" if solved else "❌ Not Solved"
+    
+    with open(os.path.join(D_F, "problem.html"), "r", encoding="utf-8") as f: 
+        h = f.read()
+        
+    return h.replace("{{id}}", id)\
+            .replace("{{u}}", u if u else "Guest")\
+            .replace("{{t}}", m[0])\
+            .replace("{{xp}}", str(m[1]))\
+            .replace("{{stmt}}", m[2])\
+            .replace("{{status}}", status_msg) # Inject the status
 
 @app.route("/<path:f>")
 @app.route("/frontend/<path:f>")
