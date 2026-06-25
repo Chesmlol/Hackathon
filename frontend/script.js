@@ -1,30 +1,9 @@
-async function runSage() {
-    const code = document.getElementById("sage-code").value;
-    const outputElement = document.getElementById("sage-output");
-    
-    outputElement.textContent = "Running...";
-
+async function subAns(id) {
+    const v = document.getElementById("ans_" + id).value;
     try {
-        const response = await fetch("/run", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ code: code })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            outputElement.textContent = data.output || data.error || "No output";
-        } else {
-            outputElement.textContent = "Error: " + data.error;
-        }
-    } catch (error) {
-        outputElement.textContent = "Error connecting to backend: " + error.message;
-    }
-}
-
-function clearSage() {
-    document.getElementById("sage-code").value = "";
-    document.getElementById("sage-output").textContent = "";
+        const res = await fetch("/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: id, answer: v }) });
+        const d = await res.json();
+        alert(d.msg);
+        if (d.success) window.location.href = "/practice";
+    } catch (e) { alert("Error"); }
 }

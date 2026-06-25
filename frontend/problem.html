@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{t}}</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/script.js"></script>
+</head>
+<body class="oj-bg">
+    <div class="oj-grid">
+        <aside class="oj-l">
+            <button class="oj-btn" onclick="subAns('{{id}}')">Submit A Solution!</button>
+            <div class="oj-panel">
+                <div class="oj-head">Problem Info</div>
+                <div class="oj-body">
+                    <p><strong>★ Score:</strong> {{xp}}</p>
+                    <p><strong>⌛ Time Limit:</strong> 2s</p>
+                    <p><strong>🖴 Memory Limit:</strong> 256MB</p>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="oj-m">
+            <h1 class="oj-title">{{t}}</h1>
+            <div class="oj-content">
+                
+                <div class="oj-stmt">{{stmt}}</div>
+                
+                <h2>Input</h2>
+                <p>Standard Input</p>
+                <h2>Sample</h2>
+                <div class="oj-sample">
+                    <h3>Input</h3>
+                    <pre>...</pre>
+                    <h3>Output</h3>
+                    <pre>...</pre>
+                </div>
+                <h2>Your Answer</h2>
+                <input type="text" id="ans_{{id}}" class="oj-inp" placeholder="Answer...">
+            </div>
+        </main>
+        
+        <aside class="oj-r">
+            <div class="oj-panel">
+                <div class="oj-head">User information</div>
+                <div class="oj-body oj-u">
+                    <div class="oj-avt-ph"></div>
+                    <p class="oj-uname">{{u}}</p>
+                    <a href="/frontend/account.html">Profile</a>
+                    <a href="#">My Submissions</a>
+                    <a href="/logout">Logout</a>
+                </div>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>
