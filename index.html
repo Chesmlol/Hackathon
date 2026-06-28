@@ -23,14 +23,13 @@
         <a href="frontend/login.html">LOGIN</a>
         <a href="frontend/register.html">REGISTER</a>
         <a href="frontend/account.html">ACCOUNT</a>
-        <a href="#learn">LEARN</a>
+        <a href="/learn">LEARN</a>
         <a href="#practice">PRACTICE</a>
-        <a href="#ranking">RANKING</a>
+        <a href="/ranking">RANKING</a>
     </nav>
 
     <main>
 
-        <div id="learn-container"></div>
         <!-- <div id="practice-container"></div> -->
         <div id="ranking-container"></div>
 
@@ -91,9 +90,8 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            loadSection("learn-container", "frontend/learn.html");
             loadSection("practice-container", "frontend/practice.html");
-            loadSection("ranking-container", "frontend/ranking.html");
+            loadSection("ranking-container", "frontend/ranking_snippet.html");
             loadSection("sage-container", "frontend/sagecell.html");
         });
     </script>

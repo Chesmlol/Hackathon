@@ -10,17 +10,42 @@
 <div class="window" style="max-width:500px;margin:100px auto;">
     <h2>REGISTER</h2>
 
-    <form method="POST" action="/frontend/register.html">
-        <input type="text" name="username" placeholder="Username" required>
+    <form id="regForm">
+        <input type="text" name="username" id="username" placeholder="Username" required>
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
         <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-
+        
+        <div id="error-msg" style="color: #ff3030; margin: 10px 0; font-weight: bold;"></div>
+        
         <button type="submit">REGISTER</button>
     </form>
 
+    <script>
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop page from reloading
+            
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.innerText = ""; // Clear previous errors
+            
+            // Send the form data
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: new FormData(this)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = '/frontend/login.html'; // Redirect on success
+            } else {
+                errorDiv.innerText = data.msg; // Show the red error text
+            }
+        });
+    </script>
+
     <br><br>
-    <a href="/">← Back Home</a>
+    <a href="/" class="back-btn">← Back Home</a>
 </div>
 
 </body>

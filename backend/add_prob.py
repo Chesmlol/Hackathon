@@ -19,7 +19,7 @@ def add_problem(id, title, xp, answer, statement):
 
 if __name__ == "__main__":
     # Example usage: 
-    # python add.py "105" "Math Challenge" 100 "42" "<p>Solve this math problem.</p>"
+    # python add_prob.py "105" "Math Challenge" 100 "42" "<p>Solve this math problem.</p>"
     import sys
     if len(sys.argv) == 6:
         add_problem(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4], sys.argv[5])

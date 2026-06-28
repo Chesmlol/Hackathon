@@ -1,0 +1,2 @@
+add_lesson to add add course. Example: idk
+add_prob to add prob. Example: python add_prob.py "Tag" "Name" exp "answer" "<p>Description goes here.</p>"

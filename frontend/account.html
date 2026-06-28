@@ -3,100 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChanceField - Account</title>
+    <title>Account</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="account.css">
 </head>
 <body>
-
 <header>
     <h1>ChanceField</h1>
     <p>> USER PROFILE LOADED</p>
 </header>
-
 <main>
-
-<section class="window">
-
-    <h2>ACCOUNT</h2>
-
-    <div class="profile">
-
-        <h3 class="username">Hieu</h3>
-
-        <p><strong>Expertise:</strong> Intermediate</p>
-
-        <p><strong>Global Position:</strong> #42</p>
-
-        <p><strong>Problems Solved:</strong> 317</p>
-
-        <br>
-
-        <p>Progress to Next Topic</p>
-
-        <div class="progress-bar">
-            <div class="progress-fill">74%</div>
-        </div>
-
+<div class="acc-grid">
+    <div class="wrapper-col">
+        <section class="window l-sec">
+            <h2>ACCOUNT</h2>
+            <div class="profile">
+                <img src="{{avatar}}" alt="Avatar" style="width:100px; height:100px; border:2px solid #00ff66; border-radius:5px; margin-bottom:10px; display:block;">
+                <h2><strong>{{dname}}</strong></h2>  
+                <p><strong>Handle:</strong> {{u}}</p> 
+                <hr style="border:0; border-top:1px solid #00ff66; margin: 10px 0;">
+                <p><strong>Rank:</strong> {{rnk}}</p>
+                <p><strong>Level:</strong> {{l}}</p>
+                <p><strong>Total XP:</strong> {{xp}}</p>
+                <p><strong>Solved:</strong> {{ps}}</p>
+                <br>
+                <p>Progress</p>
+                <div class="progress-bar"></div>
+            </div>
+        </section>
+        
+        <button onclick="document.getElementById('settings-modal').style.display='block'" 
+                class="back-btn" 
+                style="width: 100%;">
+            Settings
+        </button>
     </div>
+    
+    <section class="window r-sec">
+        <h2>SOLVED PROBLEMS</h2>
+        <div class="tbl-wrap">
+            <table>
+                <thead><tr><th>ID</th><th>Title</th><th>XP</th></tr></thead>
+                <tbody>{{tr}}</tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<div style="text-align:center; margin-top:20px;">
+    <a href="/" class="back-btn">← Back Home</a>
+</div>
+</main>
 
-</section>
 
-<section class="window">
 
-    <h2>STATISTICS</h2>
+<div id="settings-modal" class="window" style="display:none; position:fixed; top:20%; left:30%; width:400px; background:#000; z-index:1000; padding:20px; border: 1px solid #00ff66;">
+    <h3>SETTINGS</h3>
 
-    <table>
-        <tr>
-            <th>Category</th>
-            <th>Solved</th>
-        </tr>
-
-        <tr>
-            <td>Basics</td>
-            <td>95</td>
-        </tr>
-
-        <tr>
-            <td>Math</td>
-            <td>82</td>
-        </tr>
-
-        <tr>
-            <td>Graphs</td>
-            <td>61</td>
-        </tr>
-
-        <tr>
-            <td>DP</td>
-            <td>54</td>
-        </tr>
-
-        <tr>
-            <td>Advanced</td>
-            <td>25</td>
-        </tr>
-    </table>
-
-</section>
-
-<section class="window">
-
-    <h2>ACHIEVEMENTS</h2>
-
-    <p>✓ First Accepted Solution</p>
-    <p>✓ Solved 100 Problems</p>
-    <p>✓ Reached Expert</p>
-    <p>✓ Top 100 Ranking</p>
-    <p>□ 500 Problems Solved</p>
-
-</section>
-
-<div style="text-align:center;">
-    <a href="/">← Back Home</a>
+    <p>Avatar URL (Image Link):</p>
+    <input type="text" id="new_avatar" placeholder="https://image-link.png" class="oj-inp" style="width:100%; margin-bottom:10px;">
+    <p>Change Display Name:</p>
+    <input type="text" id="new_dname" placeholder="New Display Name" class="oj-inp" style="width:100%; margin-bottom:10px;">
+    
+    <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
+    
+    <p>Change Password:</p>
+    <input type="password" id="old_p" placeholder="Old Password (required)" class="oj-inp" style="width:100%; margin-bottom:5px;">
+    <input type="password" id="new_p" placeholder="New Password" class="oj-inp" style="width:100%; margin-bottom:10px;">
+    
+    <div style="display: flex; gap: 10px; margin-top:10px;">
+        <button onclick="saveSettings()" class="back-btn" style="flex:1;">Save Changes</button>
+        <button onclick="document.getElementById('settings-modal').style.display='none'" class="back-btn" style="flex:1; background:#333;">Cancel</button>
+    </div>
 </div>
 
-</main>
+<script>
+async function saveSettings() {
+    const res = await fetch('/api/update_profile', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            display_name: document.getElementById('new_dname').value,
+            avatar_url: document.getElementById('new_avatar').value,
+            old_password: document.getElementById('old_p').value,
+            new_password: document.getElementById('new_p').value
+        })
+    });
+    const data = await res.json();
+    alert(data.msg);
+    if(data.success) location.reload();
+}
+</script>
+
+
 
 </body>
 </html>

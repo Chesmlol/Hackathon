@@ -1,29 +1,80 @@
-<section id="ranking" class="window">
-    <h2>RANKING</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Leaderboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .leaderboard-window {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #000;
+            border: 2px solid #00ff66;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 255, 100, 0.2);
+        }
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #00ff66;
+        }
+        .rank-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #00ff66;
+            text-transform: uppercase;
+        }
+        .rank-table td {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+        }
+        .pagination-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .rank-table tr:hover {
+            background: rgba(0, 255, 100, 0.1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
 
-    <table>
-        <tr>
-            <th>#</th>
-            <th>User</th>
-            <th>XP</th>
-        </tr>
+<header>
+    <h1>ChanceField</h1>
+    <p>>GLOBAL RANKINGS</p>
+</header>
 
-        <tr>
-            <td>1</td>
-            <td>Alice</td>
-            <td>15420</td>
-        </tr>
+<main>
+    <section class="leaderboard-window">
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Agent</th>
+                    <th>Rank</th>
+                    <th>Level</th>
+                    <th>XP</th>
+                    <th>Solved</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{rows}}
+            </tbody>
+        </table>
+        
+        <div class="pagination-area">
+            {{prev}}
+            {{next}}
+        </div>
+    </section>
 
-        <tr>
-            <td>2</td>
-            <td>Bob</td>
-            <td>14810</td>
-        </tr>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/" class="back-btn">← Back Home</a>
+    </div>
+</main>
 
-        <tr>
-            <td>3</td>
-            <td>Player1</td>
-            <td>14500</td>
-        </tr>
-    </table>
-</section>
+</body>
+</html>
