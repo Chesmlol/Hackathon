@@ -350,15 +350,23 @@ def ranking_snippet():
     """
 
 @app.route("/problem/<id>")
+@app.route("/problem/<id>")
 def problem_page(id):
     u = get_u()
-    # 1. Fetch Problem
+    
+    # 1. Fetch Problem AND User Avatar
     with sqlite3.connect(DB_U) as c:
         m = c.execute("SELECT title, xp, statement FROM initial_misions WHERE id=?", (id,)).fetchone()
         
-        # 2. Check if Solved
+        # Fetch Avatar
+        av = "https://i.imgur.com/8Km9tLL.png" # Default fallback
         solved = False
         if u:
+            user_data = c.execute("SELECT avatar_url FROM users WHERE username=?", (u,)).fetchone()
+            if user_data and user_data[0]:
+                av = user_data[0]
+            
+            # Check if Solved
             if c.execute("SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, id)).fetchone():
                 solved = True
     
@@ -370,12 +378,14 @@ def problem_page(id):
     with open(os.path.join(D_F, "problem.html"), "r", encoding="utf-8") as f: 
         h = f.read()
         
+    # 4. Inject all variables (added {{avatar}})
     return h.replace("{{id}}", id)\
             .replace("{{u}}", u if u else "Guest")\
+            .replace("{{avatar}}", av)\
             .replace("{{t}}", m[0])\
             .replace("{{xp}}", str(m[1]))\
             .replace("{{stmt}}", m[2])\
-            .replace("{{status}}", status_msg) # Inject the status
+            .replace("{{status}}", status_msg)
 
 @app.route("/<path:f>")
 @app.route("/frontend/<path:f>")
