@@ -12,7 +12,7 @@ DB_C = os.path.join(D_B, "cookies.db")
 
 def init():
     with sqlite3.connect(DB_U) as c:
-        # Create users table
+        # Create users table (Now includes avatar_url and display_name)
         c.execute("""CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             username TEXT UNIQUE, 
@@ -23,7 +23,9 @@ def init():
             global_position TEXT DEFAULT '#999', 
             problems_solved INTEGER DEFAULT 0, 
             progress INTEGER DEFAULT 0, 
-            xp INTEGER DEFAULT 0
+            xp INTEGER DEFAULT 0,
+            avatar_url TEXT,
+            display_name TEXT
         )""")
         
         # Create initial_misions table
@@ -303,35 +305,57 @@ def learn_page():
     
 @app.route("/ranking")
 def ranking_page():
+    # 1. Setup Pagination (Page 1 by default, 10 users per page)
     page = request.args.get('page', 1, type=int)
-    if page < 1: page = 1
-    per_page = 50
+    per_page = 10
     offset = (page - 1) * per_page
     
     with sqlite3.connect(DB_U) as c:
-        # Use COALESCE here to get Display Name as the first column
+        # Get total number of users to know when to hide the "Next" button
+        total_users = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        
+        # Fetch top users sorted by XP (Highest to Lowest)
         users = c.execute("""
-            SELECT COALESCE(display_name, username), rank, level, xp, problems_solved 
+            SELECT username, rank, level, xp, problems_solved, display_name 
             FROM users 
-            ORDER BY xp DESC, problems_solved DESC 
+            ORDER BY xp DESC 
             LIMIT ? OFFSET ?
         """, (per_page, offset)).fetchall()
         
-        total_users = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        
+    # 2. Build the HTML for the rows
     rows_html = ""
-    for i, u in enumerate(users):
-        pos = offset + i + 1
-        # u[0] is now the Display Name automatically
-        rows_html += f"<tr><td>#{pos}</td><td>{u[0]}</td><td>{u[1]}</td><td>{u[2]}</td><td>{u[3]}</td><td>{u[4]}</td></tr>"
+    for i, user in enumerate(users):
+        # Calculate actual rank number (1, 2, 3...)
+        actual_rank = offset + i + 1 
         
-    prev_btn = f"<a href='/ranking?page={page-1}' class='back-btn'>← Prev 50</a>" if page > 1 else "<div></div>"
-    next_btn = f"<a href='/ranking?page={page+1}' class='back-btn'>Next 50 →</a>" if offset + per_page < total_users else "<div></div>"
+        # Fallback to username if display_name is empty/missing
+        dname = user[5] if (len(user) > 5 and user[5]) else user[0] 
+        
+        rows_html += f"""
+        <tr>
+            <td>{actual_rank}</td>
+            <td>{dname}</td>
+            <td>{user[1]}</td>
+            <td>{user[2]}</td>
+            <td>{user[3]}</td>
+            <td>{user[4]}</td>
+        </tr>
+        """
+        
+    if not rows_html:
+        rows_html = "<tr><td colspan='6' style='text-align:center;'>No agents found.</td></tr>"
+        
+    # 3. Create Pagination Links
+    prev_link = f'<a href="/ranking?page={page-1}" style="color:#00ff66; text-decoration:none;">← Previous</a>' if page > 1 else '<span></span>'
+    next_link = f'<a href="/ranking?page={page+1}" style="color:#00ff66; text-decoration:none;">Next →</a>' if (offset + per_page) < total_users else '<span></span>'
     
+    # 4. Inject into the HTML template
     with open(os.path.join(D_F, "ranking.html"), "r", encoding="utf-8") as f:
         h = f.read()
         
-    return h.replace("{{rows}}", rows_html).replace("{{prev}}", prev_btn).replace("{{next}}", next_btn)
+    return h.replace("{{rows}}", rows_html)\
+            .replace("{{prev}}", prev_link)\
+            .replace("{{next}}", next_link)
 
 @app.route("/frontend/ranking_snippet.html")
 def ranking_snippet():
@@ -350,41 +374,58 @@ def ranking_snippet():
     """
 
 @app.route("/problem/<id>")
-@app.route("/problem/<id>")
 def problem_page(id):
     u = get_u()
     
-    # 1. Fetch Problem AND User Avatar
     with sqlite3.connect(DB_U) as c:
+        # 1. Fetch Problem
         m = c.execute("SELECT title, xp, statement FROM initial_misions WHERE id=?", (id,)).fetchone()
+        if not m: return "404", 404
         
-        # Fetch Avatar
+        # 2. Fetch User Data (Display Name & Avatar)
         av = "https://i.imgur.com/8Km9tLL.png" # Default fallback
+        dname = "Guest"
         solved = False
+        
         if u:
-            user_data = c.execute("SELECT avatar_url FROM users WHERE username=?", (u,)).fetchone()
-            if user_data and user_data[0]:
-                av = user_data[0]
+            try:
+                # Fetch BOTH display_name and avatar_url
+                user_data = c.execute("SELECT display_name, avatar_url FROM users WHERE username=?", (u,)).fetchone()
+                
+                if user_data:
+                    # user_data[0] = display_name, user_data[1] = avatar_url
+                    dname = user_data[0] if user_data[0] else u
+                    
+                    # Ensure we don't load an empty string as an image
+                    if user_data[1] and user_data[1].strip():
+                        if user_data[1].startswith("http"):
+                            av = user_data[1]
+                        else:
+                            av = "/frontend/" + user_data[1].lstrip('/')
+                else:
+                    dname = u
+                    
+            except sqlite3.OperationalError:
+                # Safety net just in case the database columns act up
+                dname = u
             
             # Check if Solved
             if c.execute("SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, id)).fetchone():
                 solved = True
-    
-    if not m: return "404", 404
-    
+                
     # 3. Prepare display status
     status_msg = "✅ Solved" if solved else "❌ Not Solved"
     
     with open(os.path.join(D_F, "problem.html"), "r", encoding="utf-8") as f: 
         h = f.read()
         
-    # 4. Inject all variables (added {{avatar}})
-    return h.replace("{{id}}", id)\
-            .replace("{{u}}", u if u else "Guest")\
-            .replace("{{avatar}}", av)\
-            .replace("{{t}}", m[0])\
+    # 4. Inject all variables safely
+    return h.replace("{{id}}", str(id))\
+            .replace("{{u}}", str(dname))\
+            .replace("{{avatar}}", str(av))\
+            .replace("{{t}}", str(m[0]))\
             .replace("{{xp}}", str(m[1]))\
-            .replace("{{stmt}}", m[2])\
+            .replace("{{stmt}}", str(m[2]))\
             .replace("{{status}}", status_msg)
 
 @app.route("/<path:f>")
