@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Solutions - {{title}}</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/notify.js"></script>
+</head>
+<body class="oj-bg">
+
+<header>
+    <h1>ChanceField</h1>
+    <p>&gt; USER SOLUTIONS</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<main style="max-width: 1000px; margin: 0 auto;">
+    <section class="window">
+        <a href="/problem/{{id}}" class="back-btn" style="margin-bottom: 20px; display: inline-block;">&larr; Back to Problem</a>
+
+        <h2>User Solutions for {{title}}</h2>
+        <p style="opacity: 0.75; margin-bottom: 20px;">Below are user-submitted solutions for this problem. Solutions are shown only if their author chose to share them publicly.</p>
+
+        {{submit_area}}
+
+        <h3 class="solution-section-title">My Solutions</h3>
+        <div id="my-solutions-list">
+            {{my_solutions}}
+        </div>
+
+        <div id="lang-solutions-list" style="margin-top: 10px;">
+            {{lang_sections}}
+        </div>
+    </section>
+</main>
+
+<script>
+document.addEventListener('click', async function (e) {
+    const upBtn = e.target.closest('.solution-upvote-btn');
+    if (upBtn) {
+        const sid = upBtn.dataset.solId;
+        try {
+            const res = await fetch(`/api/solutions/${sid}/vote`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`sol-votes-${sid}`).textContent = data.votes;
+                upBtn.textContent = data.voted ? '(Upvoted)' : '(Upvote)';
+                upBtn.classList.toggle('active', data.voted);
+            } else {
+                showNotification(data.msg || 'Could not vote.', 'error');
+            }
+        } catch (err) {
+            showNotification('Error voting.', 'error');
+        }
+        return;
+    }
+
+    const copyBtn = e.target.closest('.solution-copy-btn');
+    if (copyBtn) {
+        const sid = copyBtn.dataset.solId;
+        const codeEl = document.getElementById(`sol-code-${sid}`);
+        if (codeEl) {
+            navigator.clipboard.writeText(codeEl.textContent).then(function () {
+                const original = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function () { copyBtn.textContent = original; }, 1500);
+            });
+        }
+        return;
+    }
+
+    const expandBtn = e.target.closest('.solution-code-wrap');
+    if (expandBtn && e.target.tagName !== 'BUTTON') {
+        expandBtn.classList.toggle('expanded');
+    }
+});
+</script>
+
+</body>
+</html>

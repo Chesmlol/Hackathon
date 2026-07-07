@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{t}}</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/judge.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <script src="/notify.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+</head>
+<body class="oj-bg">
+    <header>
+        <h1>ChanceField</h1>
+        <p>&gt; MISSION BRIEFING</p>
+    </header>
+
+    <nav>
+        {{nav}}
+    </nav>
+
+    <div class="oj-grid">
+        <aside class="oj-l">
+            <div class="oj-panel">
+                <div class="oj-head">Problem Info</div>
+                <div class="oj-body">
+                    <p><strong>★ Score:</strong> {{xp}}</p>
+                    <p><strong>⊞ Type:</strong> {{type}}</p>
+
+                    <div class="oj-panel">
+                        <div class="oj-head">Status</div>
+                        <div class="oj-body">
+                            <p><strong id="status-display">{{status}}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid rgba(128, 128, 128, 0.3); text-align: center;">
+                <a href="/practice" class="back-btn">← Back to Archive</a>
+            </div>
+        </aside>
+
+        <main class="oj-m" id="problem-main">
+            <h1 class="oj-title">{{t}}</h1>
+            <div class="oj-content">
+
+                <div class="oj-stmt">{{stmt}}</div>
+
+                <h2>Your Solution</h2>
+
+                <div class="judge-toolbar">
+                    <label for="lang-select" class="sr-only">Programming language</label>
+                    <select id="lang-select" class="judge-lang-select">
+                        <option value="python3">Python 3</option>
+                        <option value="cpp">C++17</option>
+                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript (Node.js)</option>
+                    </select>
+                    <span class="judge-toolbar-hint">Pick a language, write your solution, then Run &amp; Submit to judge it.</span>
+                    <button type="button" id="reset-template-btn" class="back-btn judge-reset-btn">Reset Template</button>
+                </div>
+
+                <div class="judge-editor-wrap">
+                    <textarea id="code-editor"></textarea>
+                </div>
+
+                <button type="button" id="run-btn" class="oj-btn" style="margin-top: 20px; width: 100%; max-width: 240px; display: block;">
+                    ▶ Run &amp; Submit
+                </button>
+
+                <div id="verdict-area" class="judge-verdict-area" aria-live="polite"></div>
+
+                <div class="comments-section" id="comments-section" data-problem-id="{{id}}">
+                    <h2>Comments</h2>
+
+                    <div class="comment-guidelines">
+                        <strong>Community Guidelines:</strong> Be respectful — no harassment, hate speech,
+                        or spam. Don't post personal information (emails, phone numbers, or anyone's
+                        real contact details). Comments that break these rules are rejected automatically
+                        or removed. 500 characters max.
+                    </div>
+
+                    <div id="comment-form-area"></div>
+
+                    <div id="comment-list" class="comment-list" aria-live="polite">
+                        <p class="comment-empty">Loading comments…</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <aside class="oj-r">
+            <div class="oj-panel">
+                <div class="oj-head">User information</div>
+                <div class="oj-body oj-u">
+                    <img src="{{avatar}}" alt="Avatar" style="width: 130px; height: 130px; border: 2px solid #00ff66; border-radius: 5px; margin-bottom: 10px;">
+                    <p class="oj-uname">{{u}}</p>
+                    <a href="/frontend/account.html">Profile</a>
+                    <a href="/logout">Logout</a>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+    // ── Judge: code editor, language switching, run/submit ──
+    (function () {
+        const problemId = document.getElementById('comments-section').dataset.problemId;
+
+        const LANG_TEMPLATES = {
+            python3: "# Write your solution here\nimport sys\n\ndef main():\n    pass\n\nif __name__ == '__main__':\n    main()\n",
+            cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    return 0;\n}\n",
+            java: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n\n    }\n}\n",
+            javascript: "// Write your solution here\nconst data = require('fs').readFileSync('/dev/stdin', 'utf8');\n\n"
+        };
+
+        const CM_MODES = {
+            python3: 'python',
+            cpp: 'text/x-c++src',
+            java: 'text/x-java',
+            javascript: 'javascript'
+        };
+
+        const langSelect = document.getElementById('lang-select');
+        const resetBtn = document.getElementById('reset-template-btn');
+        const runBtn = document.getElementById('run-btn');
+        const verdictArea = document.getElementById('verdict-area');
+        const statusDisplay = document.getElementById('status-display');
+        const STORAGE_KEY = 'judge_code_' + problemId;
+
+        const cm = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+            lineNumbers: true,
+            mode: CM_MODES[langSelect.value],
+            theme: 'dracula',
+            indentUnit: 4,
+            tabSize: 4,
+            viewportMargin: Infinity
+        });
+        cm.setSize('100%', '360px');
+
+        // Restore this browser's last code/language for this problem, if any,
+        // so a refresh doesn't lose work in progress.
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
+        if (saved && saved.language && LANG_TEMPLATES[saved.language] !== undefined) {
+            langSelect.value = saved.language;
+            cm.setOption('mode', CM_MODES[saved.language]);
+            cm.setValue(saved.code || LANG_TEMPLATES[saved.language]);
+        } else {
+            cm.setValue(LANG_TEMPLATES[langSelect.value]);
+        }
+
+        function persist() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ language: langSelect.value, code: cm.getValue() }));
+            } catch (e) { /* ignore quota errors */ }
+        }
+        cm.on('change', persist);
+
+        langSelect.addEventListener('change', () => {
+            cm.setOption('mode', CM_MODES[langSelect.value]);
+            if (!cm.getValue().trim()) {
+                cm.setValue(LANG_TEMPLATES[langSelect.value]);
+            }
+            persist();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (cm.getValue().trim() && !confirm('Reset to the starter template? This will erase your current code.')) return;
+            cm.setValue(LANG_TEMPLATES[langSelect.value]);
+            persist();
+        });
+
+        const VERDICT_LABELS = {
+            accepted: '✅ Accepted',
+            wrong_answer: '❌ Wrong Answer',
+            compile_error: '⚠ Compile Error',
+            runtime_error: '⚠ Runtime Error',
+            time_limit_exceeded: '⏱ Time Limit Exceeded'
+        };
+
+        function renderVerdict(data) {
+            verdictArea.innerHTML = '';
+
+            const banner = document.createElement('div');
+            banner.className = 'judge-verdict judge-verdict-' + data.verdict;
+            banner.textContent = VERDICT_LABELS[data.verdict] || data.msg || 'Unknown result';
+            verdictArea.appendChild(banner);
+
+            if (data.stderr) {
+                const label = document.createElement('p');
+                label.className = 'judge-output-label';
+                label.textContent = 'stderr';
+                verdictArea.appendChild(label);
+                const stderrBox = document.createElement('pre');
+                stderrBox.className = 'judge-output-box judge-output-stderr';
+                stderrBox.textContent = data.stderr;
+                verdictArea.appendChild(stderrBox);
+            }
+            if (data.stdout) {
+                const label = document.createElement('p');
+                label.className = 'judge-output-label';
+                label.textContent = 'stdout';
+                verdictArea.appendChild(label);
+                const stdoutBox = document.createElement('pre');
+                stdoutBox.className = 'judge-output-box';
+                stdoutBox.textContent = data.stdout;
+                verdictArea.appendChild(stdoutBox);
+            }
+        }
+
+        runBtn.addEventListener('click', async () => {
+            const code = cm.getValue();
+            if (!code.trim()) {
+                showNotification('Write some code before submitting.', 'error');
+                return;
+            }
+            runBtn.disabled = true;
+            runBtn.textContent = 'Judging…';
+            verdictArea.innerHTML = '<p class="comment-empty">Compiling and running your code…</p>';
+            try {
+                const res = await fetch('/submit_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: problemId, language: langSelect.value, code: code })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    verdictArea.innerHTML = '';
+                    showNotification(data.msg || 'Judge error.', 'error');
+                    return;
+                }
+                renderVerdict(data);
+                if (data.verdict === 'accepted') {
+                    showNotification(data.msg, 'success');
+                    statusDisplay.textContent = '✅ Solved';
+                } else {
+                    showNotification(data.msg, 'error');
+                }
+            } catch (e) {
+                verdictArea.innerHTML = '';
+                showNotification('Error running your code.', 'error');
+            } finally {
+                runBtn.disabled = false;
+                runBtn.textContent = '▶ Run & Submit';
+            }
+        });
+    })();
+    </script>
+
+    <script>
+    // ── Comments (identical behavior to problem.html) ──
+    (function () {
+        const section = document.getElementById('comments-section');
+        if (!section) return;
+
+        const problemId = section.dataset.problemId;
+        const formArea = document.getElementById('comment-form-area');
+        const listEl = document.getElementById('comment-list');
+        const MAX_LEN = 500;
+
+        function renderForm(loggedIn) {
+            formArea.innerHTML = '';
+            if (!loggedIn) {
+                const p = document.createElement('p');
+                p.className = 'comment-login-prompt';
+                const span = document.createElement('span');
+                span.textContent = 'Log in to join the discussion.';
+                const a = document.createElement('a');
+                a.href = '/frontend/login.html';
+                a.textContent = 'Log In';
+                a.className = 'back-btn';
+                p.appendChild(span);
+                p.appendChild(a);
+                formArea.appendChild(p);
+                return;
+            }
+
+            const wrap = document.createElement('div');
+            wrap.className = 'comment-form';
+
+            const label = document.createElement('label');
+            label.setAttribute('for', 'comment-input');
+            label.className = 'sr-only';
+            label.textContent = 'Write a comment';
+
+            const textarea = document.createElement('textarea');
+            textarea.id = 'comment-input';
+            textarea.className = 'comment-input';
+            textarea.maxLength = MAX_LEN;
+            textarea.rows = 3;
+            textarea.placeholder = 'Share a hint, ask a question, or discuss this problem...';
+
+            const row = document.createElement('div');
+            row.className = 'comment-form-row';
+
+            const counter = document.createElement('span');
+            counter.className = 'comment-counter';
+            counter.textContent = `0 / ${MAX_LEN}`;
+
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'button';
+            submitBtn.className = 'back-btn';
+            submitBtn.textContent = 'Post Comment';
+
+            textarea.addEventListener('input', () => {
+                counter.textContent = `${textarea.value.length} / ${MAX_LEN}`;
+            });
+
+            submitBtn.addEventListener('click', async () => {
+                const content = textarea.value.trim();
+                if (!content) { showNotification('Write something before posting.', 'error'); return; }
+                submitBtn.disabled = true;
+                try {
+                    const res = await fetch(`/api/comments/${problemId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content })
+                    });
+                    const data = await res.json();
+                    if (!data.success) {
+                        showNotification(data.msg || 'Could not post comment.', 'error');
+                    } else {
+                        textarea.value = '';
+                        counter.textContent = `0 / ${MAX_LEN}`;
+                        prependComment(data.comment);
+                        showNotification('Comment posted!', 'success');
+                    }
+                } catch (e) {
+                    showNotification('Error posting comment.', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+
+            row.appendChild(counter);
+            row.appendChild(submitBtn);
+            wrap.appendChild(label);
+            wrap.appendChild(textarea);
+            wrap.appendChild(row);
+            formArea.appendChild(wrap);
+        }
+
+        function buildCommentEl(c) {
+            const item = document.createElement('div');
+            item.className = 'comment-item';
+            item.dataset.id = c.id;
+
+            const voteCol = document.createElement('div');
+            voteCol.className = 'comment-vote';
+
+            const upBtn = document.createElement('button');
+            upBtn.type = 'button';
+            upBtn.className = 'vote-btn vote-up' + (c.user_vote === 1 ? ' active' : '');
+            upBtn.setAttribute('aria-label', 'Upvote comment');
+            upBtn.setAttribute('aria-pressed', c.user_vote === 1 ? 'true' : 'false');
+            upBtn.textContent = '▲';
+
+            const scoreEl = document.createElement('span');
+            scoreEl.className = 'vote-score';
+            scoreEl.textContent = c.score;
+
+            const downBtn = document.createElement('button');
+            downBtn.type = 'button';
+            downBtn.className = 'vote-btn vote-down' + (c.user_vote === -1 ? ' active' : '');
+            downBtn.setAttribute('aria-label', 'Downvote comment');
+            downBtn.setAttribute('aria-pressed', c.user_vote === -1 ? 'true' : 'false');
+            downBtn.textContent = '▼';
+
+            async function castVote(vote) {
+                try {
+                    const res = await fetch('/api/comments/vote', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comment_id: c.id, vote })
+                    });
+                    const data = await res.json();
+                    if (!data.success) {
+                        showNotification(data.msg || 'Please log in to vote.', 'error');
+                        return;
+                    }
+                    scoreEl.textContent = data.score;
+                    upBtn.classList.toggle('active', data.user_vote === 1);
+                    upBtn.setAttribute('aria-pressed', data.user_vote === 1 ? 'true' : 'false');
+                    downBtn.classList.toggle('active', data.user_vote === -1);
+                    downBtn.setAttribute('aria-pressed', data.user_vote === -1 ? 'true' : 'false');
+                } catch (e) {
+                    showNotification('Error casting vote.', 'error');
+                }
+            }
+
+            upBtn.addEventListener('click', () => castVote(1));
+            downBtn.addEventListener('click', () => castVote(-1));
+
+            voteCol.appendChild(upBtn);
+            voteCol.appendChild(scoreEl);
+            voteCol.appendChild(downBtn);
+
+            const body = document.createElement('div');
+            body.className = 'comment-body';
+
+            const meta = document.createElement('div');
+            meta.className = 'comment-meta';
+
+            const avatar = document.createElement('img');
+            avatar.className = 'comment-avatar';
+            avatar.src = c.avatar_url;
+            avatar.alt = '';
+
+            const author = document.createElement('a');
+            author.className = 'comment-author';
+            author.href = `/user/${c.username}`;
+            author.textContent = c.display_name;
+
+            const time = document.createElement('span');
+            time.className = 'comment-time';
+            time.textContent = c.created_at;
+
+            meta.appendChild(avatar);
+            meta.appendChild(author);
+            meta.appendChild(time);
+
+            const text = document.createElement('p');
+            text.className = 'comment-text';
+            text.textContent = c.content;
+
+            body.appendChild(meta);
+            body.appendChild(text);
+
+            if (c.is_owner) {
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'comment-delete-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.addEventListener('click', async () => {
+                    if (!confirm('Delete this comment?')) return;
+                    try {
+                        const res = await fetch(`/api/comments/${c.id}/delete`, { method: 'POST' });
+                        const data = await res.json();
+                        if (data.success) {
+                            item.remove();
+                            if (!listEl.querySelector('.comment-item')) {
+                                const p = document.createElement('p');
+                                p.className = 'comment-empty';
+                                p.textContent = 'No comments yet — be the first to share a thought!';
+                                listEl.appendChild(p);
+                            }
+                        } else {
+                            showNotification(data.msg || 'Could not delete comment.', 'error');
+                        }
+                    } catch (e) {
+                        showNotification('Error deleting comment.', 'error');
+                    }
+                });
+                body.appendChild(delBtn);
+            } else {
+                const reportBtn = document.createElement('button');
+                reportBtn.type = 'button';
+                reportBtn.className = 'comment-report-btn';
+                reportBtn.textContent = 'Report';
+                reportBtn.addEventListener('click', async () => {
+                    const reason = window.prompt('Why are you reporting this comment? (optional)') || '';
+                    try {
+                        const res = await fetch(`/api/comments/${c.id}/report`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason })
+                        });
+                        const data = await res.json();
+                        showNotification(data.msg || (data.success ? 'Reported.' : 'Could not report comment.'), data.success ? 'success' : 'error');
+                        if (data.success) {
+                            reportBtn.disabled = true;
+                            reportBtn.textContent = 'Reported';
+                        }
+                    } catch (e) {
+                        showNotification('Error reporting comment.', 'error');
+                    }
+                });
+                body.appendChild(reportBtn);
+            }
+
+            item.appendChild(voteCol);
+            item.appendChild(body);
+            return item;
+        }
+
+        function prependComment(c) {
+            const empty = listEl.querySelector('.comment-empty');
+            if (empty) empty.remove();
+            listEl.insertBefore(buildCommentEl(c), listEl.firstChild);
+        }
+
+        async function loadComments() {
+            try {
+                const res = await fetch(`/api/comments/${problemId}`);
+                const data = await res.json();
+                renderForm(data.logged_in);
+                listEl.innerHTML = '';
+                if (!data.comments || data.comments.length === 0) {
+                    const p = document.createElement('p');
+                    p.className = 'comment-empty';
+                    p.textContent = 'No comments yet — be the first to share a thought!';
+                    listEl.appendChild(p);
+                    return;
+                }
+                data.comments.forEach(c => listEl.appendChild(buildCommentEl(c)));
+            } catch (e) {
+                listEl.innerHTML = '';
+                const p = document.createElement('p');
+                p.className = 'comment-empty';
+                p.textContent = 'Could not load comments.';
+                listEl.appendChild(p);
+            }
+        }
+
+        loadComments();
+    })();
+    </script>
+</body>
+</html>

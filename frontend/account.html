@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/account.css">
+    <link rel="stylesheet" href="/blog.css">
+    <script src="/notify.js"></script>
+</head>
+<body>
+<header>
+    <h1>ChanceField</h1>
+    <p>> USER PROFILE LOADED</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+<main>
+<div class="acc-grid">
+    <div class="wrapper-col">
+        <section class="window l-sec">
+            <h2>ACCOUNT</h2>
+            <div class="profile">
+                <img src="{{avatar}}" alt="Avatar" style="width:130px; height:130px; border:2px solid #00ff66; border-radius:5px; margin-bottom:10px; display:block;">
+                <h2><strong>{{dname}}</strong></h2>  
+                <p><strong>Handle:</strong> {{u}}</p> 
+                <hr style="border:0; border-top:1px solid #00ff66; margin: 10px 0;">
+                <p><strong>Rank:</strong> {{rnk}}</p>
+                <p><strong>Level:</strong> {{l}}</p>
+                <p><strong>Total XP:</strong> {{xp}}</p>
+                <p><strong>Solved:</strong> {{ps}}</p>
+                <br>
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Overall Progress</span>
+                        <span>{{overall_solved}} / {{overall_total}} ({{overall_pct}}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{overall_pct}}%;"></div>
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>📝 Answer Problems</span>
+                        <span>{{answer_solved}} / {{answer_total}} ({{answer_pct}}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-fill-answer" style="width:{{answer_pct}}%;"></div>
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>💻 Code Problems</span>
+                        <span>{{code_solved}} / {{code_total}} ({{code_pct}}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-fill-code" style="width:{{code_pct}}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- SETTINGS_BTN_START -->
+        <button onclick="openSettings()" 
+                class="back-btn" 
+                style="width: 100%;">
+            Settings
+        </button>
+        <!-- SETTINGS_BTN_END -->
+    </div>
+    
+    <section class="window r-sec">
+        <div class="acc-tabs">
+            {{tab_bar}}
+        </div>
+        {{r_sec_content}}
+    </section>
+</div>
+</main>
+
+
+
+<!-- SETTINGS_MODAL_START -->
+<div id="settings-backdrop" class="modal-backdrop" style="display:none;" onclick="closeSettings()"></div>
+<div id="settings-modal" class="window modal-window" role="dialog" aria-modal="true" aria-labelledby="settings-title"
+     style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:500px; background:#000; z-index:1000; padding:30px; border: 1px solid #00ff66;">
+    <h3 id="settings-title">SETTINGS</h3>
+
+    <label for="new_avatar">Avatar URL (Image Link):</label>
+    <input type="text" id="new_avatar" placeholder="https://image-link.png" class="oj-inp" style="width:100%; margin-bottom:10px;" autocomplete="off">
+
+    <label for="new_dname">Change Display Name:</label>
+    <input type="text" id="new_dname" placeholder="New Display Name" class="oj-inp" style="width:100%; margin-bottom:10px;" autocomplete="nickname">
+    
+    <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
+    
+    <label for="old_p">Change Password:</label>
+    <input type="password" id="old_p" placeholder="Old Password (required)" class="oj-inp" style="width:100%; margin-bottom:5px;" autocomplete="current-password">
+    <label for="new_p" class="sr-only">New Password</label>
+    <input type="password" id="new_p" placeholder="New Password" class="oj-inp" style="width:100%; margin-bottom:10px;" autocomplete="new-password">
+    
+    <div style="display: flex; gap: 10px; margin-top:10px;">
+        <button onclick="saveSettings()" class="back-btn" style="flex:1;">Save Changes</button>
+        <button onclick="closeSettings()" class="back-btn" style="flex:1; background:#333;">Cancel</button>
+    </div>
+</div>
+
+<script>
+function openSettings() {
+    document.getElementById('settings-modal').style.display = 'block';
+    document.getElementById('settings-backdrop').style.display = 'block';
+    document.getElementById('new_avatar').focus();
+}
+
+function closeSettings() {
+    document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('settings-backdrop').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSettings();
+});
+
+async function saveSettings() {
+    const res = await fetch('/api/update_profile', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            display_name: document.getElementById('new_dname').value,
+            avatar_url: document.getElementById('new_avatar').value,
+            old_password: document.getElementById('old_p').value,
+            new_password: document.getElementById('new_p').value
+        })
+    });
+    const data = await res.json();
+    showNotification(data.msg, data.success ? "success" : "error");
+    if(data.success) setTimeout(() => location.reload(), 800);
+}
+</script>
+<!-- SETTINGS_MODAL_END -->
+
+
+
+</body>
+</html>

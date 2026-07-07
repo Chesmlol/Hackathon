@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Archives</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Minimal table formatting that inherits from oj-content */
+        .archives-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .archives-table th {
+            text-align: left;
+            padding: 15px 10px;
+            border-bottom: 2px solid rgba(128, 128, 128, 0.5);
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .archives-table td {
+            text-align: left; 
+        }
+
+        .archives-table td a {
+            color: #00ff66; /* Explicitly sets the retro green color */
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.15em;
+            transition: color 0.2s ease;
+        }
+
+        .archives-table td a:hover {
+            color: #33ff88; /* Slightly brighter green when hovered */
+            text-decoration: underline;
+        }
+        
+        .archives-table tr:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+
+        .prob-type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border: 1px solid currentColor;
+        }
+        .type-answer { color: #00ccff; border-color: #00ccff; }
+        .type-code   { color: #ffcc00; border-color: #ffcc00; }
+
+        /* ---- Row action menu (official/user solutions, code-type only) ----
+           Absolutely positioned within the (now shared) Solved By column so
+           it pins to the right edge regardless of how wide the solved-count
+           text is, instead of needing its own dedicated table column. */
+        .row-menu-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 1px solid rgba(0, 255, 100, 0.5);
+            color: #00ff66;
+            width: 34px;
+            min-height: 34px;
+            padding: 0;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .row-menu-btn:hover {
+            background: #00ff66;
+            color: #000;
+        }
+        .row-menu-dropdown {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 100%;
+            margin-top: 4px;
+            background: #000;
+            border: 1px solid #00ff66;
+            box-shadow: 0 0 12px rgba(0, 255, 100, 0.3);
+            z-index: 60;
+            min-width: 210px;
+            text-align: left;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .row-menu-dropdown.open {
+            display: block;
+        }
+        .row-menu-dropdown a {
+            display: block;
+            padding: 10px 14px;
+            color: #00ff66 !important;
+            text-decoration: none !important;
+            font-size: 0.95rem !important;
+            font-weight: normal !important;
+            border-bottom: 1px solid rgba(0, 255, 100, 0.15);
+        }
+        .row-menu-dropdown a:last-child { border-bottom: none; }
+        .row-menu-dropdown a:hover {
+            background: rgba(0, 255, 100, 0.15);
+            color: #33ff88 !important;
+        }
+        .row-menu-dropdown .row-menu-disabled {
+            display: block;
+            padding: 10px 14px;
+            color: rgba(0, 255, 100, 0.35) !important;
+            font-size: 0.95rem !important;
+            font-weight: normal !important;
+            border-bottom: 1px solid rgba(0, 255, 100, 0.15);
+            cursor: not-allowed;
+            pointer-events: none;
+            user-select: none;
+        }
+        .row-menu-dropdown .row-menu-disabled:last-child { border-bottom: none; }
+
+        /* ---- Pagination (matches the /learn page's paging component) ---- */
+        .archives-pagination {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(128, 128, 128, 0.3);
+        }
+        .page-link {
+            padding: 6px 12px;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .page-link-active {
+            background: #00ff66;
+            color: #000;
+            font-weight: bold;
+        }
+        .page-link-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            border-color: #555;
+            color: #555;
+        }
+        .page-ellipsis {
+            padding: 6px 4px;
+            opacity: 0.6;
+        }
+        .page-info {
+            opacity: 0.7;
+            font-size: 0.85em;
+        }
+
+        /* ---- Search bar (mirrors /learn) ---- */
+        .practice-search-window {
+            max-width: 1180px;
+            margin: 20px auto 0;
+        }
+        .practice-search-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .practice-search-form .back-btn {
+            margin-top: 0;
+        }
+        .practice-search-input {
+            flex: 1;
+            min-width: 200px;
+            min-height: 0;
+            margin: 0;
+            padding: 13px 12px;
+            background: #000;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 1em;
+            line-height: 1.2;
+        }
+        .practice-search-input:focus {
+            outline: none;
+            box-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+        }
+        .practice-clear-btn {
+            white-space: nowrap;
+        }
+        .practice-search-form button[type="submit"],
+        .practice-clear-btn {
+            width: 110px;
+            height: 50px;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* ---- Two-column layout: table + filter/sort sidebar ---- */
+        .practice-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 1180px;
+        }
+        .practice-main-col {
+            flex: 1;
+            min-width: 0;
+            /* Neutralize the global `main { max-width:1400px; margin:auto }`
+               rule — this element IS a <main> tag, and auto margins were
+               absorbing the flex row's free space instead of letting
+               flex:1 stretch it, leaving a gap next to the sidebar. */
+            width: auto;
+            max-width: none;
+            margin: 0;
+        }
+        .practice-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+        }
+        .practice-sidebar h3 {
+            margin-top: 0;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+        }
+        .practice-sidebar-section + .practice-sidebar-section {
+            margin-top: 20px;
+        }
+        .results-meta {
+            opacity: 0.8;
+            font-size: 0.9em;
+            margin: 0 0 15px 0;
+        }
+
+        /* ---- Filter/sort links (mirrors difficulty filter on /learn) ---- */
+        .filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .filter-link {
+            display: block;
+            padding: 8px 10px;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            border-radius: 3px;
+            text-decoration: none;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        .filter-link-active {
+            background: #00ff66;
+            color: #000;
+        }
+
+        @media (max-width: 700px) {
+            .practice-layout { flex-direction: column; }
+            .practice-sidebar { width: 100%; position: static; }
+            .filter-list { flex-direction: row; flex-wrap: wrap; }
+            .filter-link { flex: 1; min-width: 100px; }
+        }
+    </style>
+</head>
+<body class="oj-bg">
+
+    <header>
+        <h1>ChanceField</h1>
+        <p>> PROBLEM ARCHIVES</p>
+    </header>
+
+    <nav>
+        {{nav}}
+    </nav>
+
+    <section class="window practice-search-window">
+        <form action="/practice" method="get" class="practice-search-form">
+            <input type="hidden" name="type" value="{{type_filter}}">
+            <input type="hidden" name="sort" value="{{sort}}">
+            <label for="practice-search-q" class="sr-only">Search problems by title</label>
+            <input
+                type="text"
+                id="practice-search-q"
+                name="q"
+                value="{{search_value}}"
+                placeholder="Search problems by title..."
+                class="practice-search-input"
+            >
+            <button type="submit" class="back-btn">Search</button>
+            {{clear_search}}
+        </form>
+    </section>
+
+    <div class="oj-grid" style="display: flex; justify-content: center; margin-top: 20px;">
+
+        <div class="practice-layout">
+
+            <main class="oj-m practice-main-col">
+                <h1 class="oj-title">Problem Archives</h1>
+
+                <div class="oj-content">
+                    <p class="results-meta">{{results_meta}}</p>
+
+                    <table class="archives-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 7%;">ID</th>
+                                <th style="width: 45%;">Title</th>
+                                <th style="width: 13%; text-align: center;">Type</th>
+                                <th style="width: 35%; text-align: center;">Solved By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{table_rows}}
+                        </tbody>
+                    </table>
+
+                    <div class="archives-pagination">
+                        {{pagination}}
+                    </div>
+
+                </div>
+
+            </main>
+
+            <aside class="window practice-sidebar">
+                <div class="practice-sidebar-section">
+                    <h3>TYPE</h3>
+                    <div class="filter-list">
+                        {{type_sidebar}}
+                    </div>
+                </div>
+                <div class="practice-sidebar-section">
+                    <h3>SORT BY</h3>
+                    <div class="filter-list">
+                        {{sort_sidebar}}
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script>
+    // Row action menu: one delegated click handler so we don't need
+    // per-row inline onclick attributes for however many problems are
+    // on the page.
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.row-menu-btn');
+        if (btn) {
+            const dropdown = btn.nextElementSibling;
+            const wasOpen = dropdown.classList.contains('open');
+            document.querySelectorAll('.row-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+            if (!wasOpen) dropdown.classList.add('open');
+            e.stopPropagation();
+            return;
+        }
+        document.querySelectorAll('.row-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+    });
+    </script>
+
+</body>
+</html>

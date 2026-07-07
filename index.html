@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChanceField</title>
+    <link rel="stylesheet" href="frontend/style.css">
+    <link rel="stylesheet" href="frontend/textareastyle.css">
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+</head>
+
+<body>
+
+    <div class="scanline"></div>
+
+    <header>
+        <h1>ChanceField</h1>
+        <p>> PROBABILITIES!</p>
+    </header>
+
+    <nav>
+        {{nav}}
+    </nav>
+
+    <main>
+
+        <!-- <div id="practice-container"></div> -->
+
+        <section class="window about-window" aria-labelledby="about-heading">
+            <h2 id="about-heading">ABOUT US</h2>
+
+            <div class="about-carousel" id="about-carousel" aria-roledescription="carousel" aria-label="About ChanceField">
+                <div class="about-slides">
+                    <div class="about-slide active" role="group" aria-roledescription="slide" aria-label="1 of 4">
+                        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of two dice showing five and four, with motion lines suggesting a roll">
+                            <rect width="400" height="220" fill="#050505"/>
+                            <!-- floor shadows -->
+                            <ellipse cx="120" cy="157" rx="55" ry="8" fill="#00ff66" opacity="0.12"/>
+                            <ellipse cx="270" cy="192" rx="55" ry="8" fill="#00ff66" opacity="0.12"/>
+                            <!-- motion arcs suggesting the dice were just rolled -->
+                            <path d="M30 50 Q 55 40 75 55" fill="none" stroke="#00ff66" stroke-width="1.5" opacity="0.4" stroke-dasharray="3 4"/>
+                            <path d="M20 70 Q 45 62 62 74" fill="none" stroke="#00ff66" stroke-width="1.5" opacity="0.3" stroke-dasharray="3 4"/>
+                            <g fill="none" stroke="#00ff66" stroke-width="3">
+                                <rect x="70" y="45" width="100" height="100" rx="12"/>
+                                <rect x="220" y="80" width="100" height="100" rx="12"/>
+                            </g>
+                            <!-- inner bevel -->
+                            <rect x="78" y="53" width="84" height="84" rx="8" fill="none" stroke="#00ff66" stroke-width="1" opacity="0.25"/>
+                            <rect x="228" y="88" width="84" height="84" rx="8" fill="none" stroke="#00ff66" stroke-width="1" opacity="0.25"/>
+                            <g fill="#00ff66">
+                                <circle cx="100" cy="75" r="6"/><circle cx="140" cy="75" r="6"/>
+                                <circle cx="100" cy="115" r="6"/><circle cx="140" cy="115" r="6"/>
+                                <circle cx="120" cy="95" r="6"/>
+                                <circle cx="250" cy="110" r="6"/><circle cx="290" cy="110" r="6"/>
+                                <circle cx="250" cy="150" r="6"/><circle cx="290" cy="150" r="6"/>
+                            </g>
+                            <!-- face-value labels -->
+                            <text x="120" y="163" text-anchor="middle" font-family="monospace" font-size="13" fill="#00ff66" opacity="0.85">rolled: 5</text>
+                            <text x="270" y="198" text-anchor="middle" font-family="monospace" font-size="13" fill="#00ff66" opacity="0.85">rolled: 4</text>
+                            <text x="200" y="22" text-anchor="middle" font-family="monospace" font-size="13" fill="#00ff66" opacity="0.7">P(sum = 9) = 4/36</text>
+                        </svg>
+                    </div>
+                    <div class="about-slide" role="group" aria-roledescription="slide" aria-label="2 of 4">
+                        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a coin flip showing heads and tails outcomes with equal probability">
+                            <rect width="400" height="220" fill="#050505"/>
+                            <!-- Heads coin -->
+                            <ellipse cx="120" cy="110" rx="62" ry="62" fill="none" stroke="#00ff66" stroke-width="3"/>
+                            <ellipse cx="120" cy="110" rx="48" ry="48" fill="none" stroke="#00ff66" stroke-width="1" opacity="0.4"/>
+                            <text x="120" y="124" text-anchor="middle" font-family="monospace" font-size="34" fill="#00ff66">H</text>
+                            <text x="120" y="188" text-anchor="middle" font-family="monospace" font-size="14" fill="#00ff66" opacity="0.85">P(H) = 1/2</text>
+                            <!-- Tails coin -->
+                            <ellipse cx="280" cy="110" rx="62" ry="62" fill="none" stroke="#00ff66" stroke-width="3"/>
+                            <ellipse cx="280" cy="110" rx="48" ry="48" fill="none" stroke="#00ff66" stroke-width="1" opacity="0.4"/>
+                            <text x="280" y="124" text-anchor="middle" font-family="monospace" font-size="34" fill="#00ff66">T</text>
+                            <text x="280" y="188" text-anchor="middle" font-family="monospace" font-size="14" fill="#00ff66" opacity="0.85">P(T) = 1/2</text>
+                            <!-- flip arrows between them -->
+                            <path d="M195 90 A 40 30 0 0 1 205 90" fill="none" stroke="#00ff66" stroke-width="2" stroke-dasharray="5 5" opacity="0.7"/>
+                            <path d="M205 90 l-6 -5 M205 90 l-2 7" fill="none" stroke="#00ff66" stroke-width="2" opacity="0.7"/>
+                            <path d="M205 130 A 40 30 0 0 1 195 130" fill="none" stroke="#00ff66" stroke-width="2" stroke-dasharray="5 5" opacity="0.7"/>
+                            <path d="M195 130 l6 -5 M195 130 l2 7" fill="none" stroke="#00ff66" stroke-width="2" opacity="0.7"/>
+                            <text x="200" y="30" text-anchor="middle" font-family="monospace" font-size="14" fill="#00ff66" opacity="0.85">fair coin flip</text>
+                        </svg>
+                    </div>
+                    <div class="about-slide" role="group" aria-roledescription="slide" aria-label="3 of 4">
+                        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a fan of three playing cards with rank and suit indices">
+                            <rect width="400" height="220" fill="#050505"/>
+                            <!-- Cards fanned around pivot (200,230) — below the SVG so the fan opens cleanly upward -->
+                            <!-- Left card (K♥) rotated -18°. Card rect spans y 58-172, so its own
+                                 center is (200,115) — the mirrored bottom-right index is just the
+                                 top-left index duplicated and rotated 180° about that center. -->
+                            <g transform="rotate(-18, 200, 230)">
+                                <rect x="163" y="58" width="74" height="114" rx="7" fill="#050505" stroke="#00ff66" stroke-width="2.5"/>
+                                <g fill="#ff3030" font-family="monospace">
+                                    <text x="171" y="78" font-size="14">K</text>
+                                    <text x="170" y="95" font-size="13">&#9829;</text>
+                                </g>
+                                <g fill="#ff3030" font-family="monospace" transform="rotate(180, 200, 115)">
+                                    <text x="171" y="78" font-size="14">K</text>
+                                    <text x="170" y="95" font-size="13">&#9829;</text>
+                                </g>
+                            </g>
+                            <!-- Right card (J♦) rotated +18°, same center (200,115) -->
+                            <g transform="rotate(18, 200, 230)">
+                                <rect x="163" y="58" width="74" height="114" rx="7" fill="#050505" stroke="#00ff66" stroke-width="2.5"/>
+                                <g fill="#ff3030" font-family="monospace">
+                                    <text x="171" y="78" font-size="14">J</text>
+                                    <text x="170" y="95" font-size="13">&#9830;</text>
+                                </g>
+                                <g fill="#ff3030" font-family="monospace" transform="rotate(180, 200, 115)">
+                                    <text x="171" y="78" font-size="14">J</text>
+                                    <text x="170" y="95" font-size="13">&#9830;</text>
+                                </g>
+                            </g>
+                            <!-- Center card (A♠), rendered last so it sits on top. Rect spans
+                                 y 50-164, so its own center is (200,107). -->
+                            <rect x="163" y="50" width="74" height="114" rx="7" fill="#050505" stroke="#00ff66" stroke-width="2.5"/>
+                            <g fill="#00ff66" font-family="monospace">
+                                <text x="171" y="70" font-size="14">A</text>
+                                <text x="170" y="87" font-size="13">&#9824;</text>
+                            </g>
+                            <text x="200" y="107" text-anchor="middle" dominant-baseline="central" font-family="monospace" font-size="36" fill="#00ff66">&#9824;</text>
+                            <g fill="#00ff66" font-family="monospace" transform="rotate(180, 200, 107)">
+                                <text x="171" y="70" font-size="14">A</text>
+                                <text x="170" y="87" font-size="13">&#9824;</text>
+                            </g>
+                            <text x="200" y="200" text-anchor="middle" font-family="monospace" font-size="14" fill="#00ff66" opacity="0.85">P(draw A) = 1/52</text>
+                        </svg>
+                    </div>
+                    <div class="about-slide" role="group" aria-roledescription="slide" aria-label="4 of 4">
+                        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a normal probability distribution curve plotted on labeled x and y axes with gridlines, tick marks, and the mean highlighted">
+                            <rect width="400" height="220" fill="#050505"/>
+
+                            <!-- gridlines -->
+                            <g stroke="#00ff66" stroke-width="1" opacity="0.15">
+                                <line x1="90" y1="190" x2="90" y2="30"/>
+                                <line x1="150" y1="190" x2="150" y2="30"/>
+                                <line x1="210" y1="190" x2="210" y2="30"/>
+                                <line x1="270" y1="190" x2="270" y2="30"/>
+                                <line x1="330" y1="190" x2="330" y2="30"/>
+                                <line x1="45" y1="150" x2="365" y2="150"/>
+                                <line x1="45" y1="110" x2="365" y2="110"/>
+                                <line x1="45" y1="70" x2="365" y2="70"/>
+                            </g>
+
+                            <!-- axes with arrowheads -->
+                            <line x1="40" y1="190" x2="378" y2="190" stroke="#00ff66" stroke-width="2"/>
+                            <path d="M378 190 l-9 -5 l0 10 z" fill="#00ff66"/>
+                            <line x1="40" y1="190" x2="40" y2="22" stroke="#00ff66" stroke-width="2"/>
+                            <path d="M40 22 l-5 9 l10 0 z" fill="#00ff66"/>
+
+                            <!-- x-axis ticks + coordinate labels -->
+                            <g stroke="#00ff66" stroke-width="2">
+                                <line x1="90" y1="187" x2="90" y2="193"/>
+                                <line x1="150" y1="187" x2="150" y2="193"/>
+                                <line x1="210" y1="187" x2="210" y2="193"/>
+                                <line x1="270" y1="187" x2="270" y2="193"/>
+                                <line x1="330" y1="187" x2="330" y2="193"/>
+                            </g>
+                            <g font-family="monospace" font-size="12" fill="#00ff66" text-anchor="middle">
+                                <text x="90" y="206">-2</text>
+                                <text x="150" y="206">-1</text>
+                                <text x="210" y="206">0</text>
+                                <text x="270" y="206">1</text>
+                                <text x="330" y="206">2</text>
+                            </g>
+
+                            <!-- y-axis ticks + coordinate labels -->
+                            <g stroke="#00ff66" stroke-width="2">
+                                <line x1="37" y1="150" x2="43" y2="150"/>
+                                <line x1="37" y1="110" x2="43" y2="110"/>
+                                <line x1="37" y1="70" x2="43" y2="70"/>
+                            </g>
+                            <g font-family="monospace" font-size="11" fill="#00ff66" text-anchor="end">
+                                <text x="33" y="154">0.1</text>
+                                <text x="33" y="114">0.2</text>
+                                <text x="33" y="74">0.3</text>
+                            </g>
+
+                            <!-- the curve itself -->
+                            <path d="M60 185 C 120 185, 150 45, 210 45 S 300 185, 360 185" fill="none" stroke="#00ff66" stroke-width="3"/>
+
+                            <!-- mean marker -->
+                            <line x1="210" y1="45" x2="210" y2="190" stroke="#ff3030" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>
+                            <circle cx="210" cy="45" r="5" fill="#ff3030"/>
+                            <text x="216" y="38" font-family="monospace" font-size="13" fill="#ff3030">μ (0, 0.4)</text>
+
+                            <!-- axis titles -->
+                            <text x="372" y="210" text-anchor="end" font-family="monospace" font-size="15" fill="#00ff66">x</text>
+                            <text x="18" y="110" text-anchor="middle" font-family="monospace" font-size="15" fill="#00ff66" transform="rotate(-90, 18, 110)">P(x)</text>
+                            <text x="210" y="18" text-anchor="middle" font-family="monospace" font-size="13" fill="#00ff66" opacity="0.8">Normal Distribution</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="button" class="about-arrow about-prev" aria-label="Previous image">&#8249;</button>
+                <button type="button" class="about-arrow about-next" aria-label="Next image">&#8250;</button>
+
+                <div class="about-dots" role="tablist" aria-label="Choose image"></div>
+            </div>
+
+            <p class="about-desc">
+                ChanceField is a training ground for probability, combinatorics, and statistical thinking.
+                Work through bite-sized lessons, tackle archived problems on the judge, and climb the
+                leaderboard as you sharpen your intuition for chance &mdash; one roll, flip, and draw at a time.
+            </p>
+        </section>
+
+        <div id="ranking-container"></div>
+
+        <!-- <div id="sage-container" class="window"></div> -->
+
+    </main>
+
+    <footer>
+        <p>> "never gonna give you up" - Rick Astley</p>
+    </footer>
+
+    <script>
+        async function loadSection(id, url) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const html = await response.text();
+                    document.getElementById(id).innerHTML = html;
+                    if (id === 'sage-container' && window.sagecell) {
+                        try {
+                            sagecell.makeSagecell({ inputLocation: '#sage-container .sage' });
+                        } catch (e) {
+                            console.error('Failed to initialize sagecell:', e);
+                        }
+                    }
+                } else {
+                    console.error(`Failed to load ${url}: ${response.status}`);
+                }
+            } catch (error) {
+                console.error(`Error loading ${url}:`, error);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadSection("practice-container", "frontend/practice.html");
+            loadSection("ranking-container", "frontend/ranking_snippet.html");
+            //loadSection("sage-container", "frontend/sagecell.html");
+            initAboutCarousel();
+        });
+
+        function initAboutCarousel() {
+            const root = document.getElementById('about-carousel');
+            if (!root) return;
+
+            const slides = Array.from(root.querySelectorAll('.about-slide'));
+            const dotsWrap = root.querySelector('.about-dots');
+            const prevBtn = root.querySelector('.about-prev');
+            const nextBtn = root.querySelector('.about-next');
+            const AUTO_MS = 4500;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let current = 0;
+            let timer = null;
+
+            slides.forEach((_, i) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'about-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('role', 'tab');
+                dot.setAttribute('aria-label', `Show image ${i + 1} of ${slides.length}`);
+                dot.addEventListener('click', () => { goTo(i); restartAuto(); });
+                dotsWrap.appendChild(dot);
+            });
+            const dots = Array.from(dotsWrap.children);
+
+            function goTo(index) {
+                slides[current].classList.remove('active');
+                dots[current].classList.remove('active');
+                current = (index + slides.length) % slides.length;
+                slides[current].classList.add('active');
+                dots[current].classList.add('active');
+            }
+
+            function next() { goTo(current + 1); }
+            function prev() { goTo(current - 1); }
+
+            function startAuto() {
+                if (reduceMotion) return;
+                stopAuto();
+                timer = setInterval(next, AUTO_MS);
+            }
+            function stopAuto() {
+                if (timer) clearInterval(timer);
+                timer = null;
+            }
+            function restartAuto() { stopAuto(); startAuto(); }
+
+            nextBtn.addEventListener('click', () => { next(); restartAuto(); });
+            prevBtn.addEventListener('click', () => { prev(); restartAuto(); });
+            root.addEventListener('mouseenter', stopAuto);
+            root.addEventListener('mouseleave', startAuto);
+            root.addEventListener('focusin', stopAuto);
+            root.addEventListener('focusout', startAuto);
+
+            startAuto();
+        }
+    </script>
+    <script src="frontend/script.js"></script>
+</body>
+
+</html>

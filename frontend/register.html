@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - RetroCode Academy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>ChanceField</h1>
+    <p>> NEW AGENT REGISTRATION</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<div class="window" style="max-width:500px;margin:100px auto;">
+    <h2>REGISTER</h2>
+
+    <form id="regForm">
+        <label for="username" class="sr-only">Username</label>
+        <input type="text" name="username" id="username" placeholder="Username" autocomplete="username" required>
+
+        <label for="email" class="sr-only">Email</label>
+        <input type="email" name="email" id="email" placeholder="Email" autocomplete="email" required>
+
+        <label for="password" class="sr-only">Password</label>
+        <input type="password" name="password" id="password" placeholder="Password" autocomplete="new-password" required>
+
+        <label for="confirm_password" class="sr-only">Confirm Password</label>
+        <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" autocomplete="new-password" required>
+        
+        <div id="error-msg" role="alert" aria-live="polite" style="color: #ff3030; margin: 10px 0; font-weight: bold;"></div>
+        
+        <button type="submit">REGISTER</button>
+    </form>
+
+    <script>
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop page from reloading
+            
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.innerText = ""; // Clear previous errors
+            
+            // Send the form data
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: new FormData(this)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = '/frontend/login.html'; // Redirect on success
+            } else {
+                errorDiv.innerText = data.msg; // Show the red error text
+            }
+        });
+    </script>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Users</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+    <h1>ChanceField</h1>
+    <p>> USER SEARCH</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<main style="max-width: 900px; margin: 0 auto;">
+    <section class="window">
+        <h2 class="oj-title" style="font-size: 2rem;">SEARCH RESULTS</h2>
+
+        <form action="/search" method="GET" class="search-page-form" role="search">
+            <label for="search-page-input" class="sr-only">Search users</label>
+            <input type="text" id="search-page-input" name="q" value="{{q}}" placeholder="Search by username or display name..." class="oj-inp" autocomplete="off">
+            <button type="submit" class="back-btn">Search</button>
+        </form>
+
+        <div class="search-results-list">
+            {{rows}}
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

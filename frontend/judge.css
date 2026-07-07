@@ -1,0 +1,107 @@
+/* ════════════════════════════════
+   Code judge UI (code-type problem page)
+   ════════════════════════════════ */
+.judge-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.judge-lang-select {
+    min-height: 44px;
+    background: black;
+    color: #00ff66;
+    border: 2px solid #00ff66;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    width: auto;
+}
+
+.judge-toolbar-hint {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    flex: 1;
+    min-width: 200px;
+}
+
+.judge-reset-btn {
+    margin-top: 0;
+    padding: 8px 18px;
+    font-size: 0.95rem;
+}
+
+.judge-editor-wrap {
+    border: 2px solid #00ff66;
+    box-shadow: 0 0 12px rgba(0, 255, 100, 0.2);
+    overflow: hidden;
+}
+
+.judge-editor-wrap .CodeMirror {
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    height: 360px;
+}
+
+.judge-verdict-area {
+    margin-top: 20px;
+}
+
+.judge-verdict {
+    display: inline-block;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    border: 2px solid currentColor;
+    margin-bottom: 10px;
+}
+
+.judge-verdict-accepted {
+    color: #00ff66;
+    text-shadow: 0 0 8px #00ff66;
+}
+
+.judge-verdict-wrong_answer,
+.judge-verdict-runtime_error,
+.judge-verdict-time_limit_exceeded {
+    color: #ff3030;
+    text-shadow: 0 0 8px #ff3030;
+}
+
+.judge-verdict-compile_error {
+    color: #ffcc00;
+    text-shadow: 0 0 8px #ffcc00;
+}
+
+.judge-output-box {
+    background: black;
+    border: 1px solid rgba(0, 255, 100, 0.35);
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.judge-output-label {
+    font-size: 0.8rem;
+    opacity: 0.65;
+    letter-spacing: 1px;
+    margin: 6px 0 4px;
+    text-transform: uppercase;
+}
+
+.judge-output-stderr {
+    border-color: rgba(255, 48, 48, 0.5);
+    color: #ff8080;
+}
+
+@media (max-width: 700px) {
+    .judge-toolbar { flex-direction: column; align-items: stretch; }
+    .judge-editor-wrap .CodeMirror { height: 280px; }
+}

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChanceField - Learning Path</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .learn-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid currentColor;
+        }
+        .badge-type   { color: #00ff66; border-color: #00ff66; }
+        .diff-10      { color: #00ff66; border-color: #00ff66; }
+        .diff-11      { color: #ffcc00; border-color: #ffcc00; }
+        .diff-12      { color: #ff3030; border-color: #ff3030; }
+        .diff-college { color: #3399ff; border-color: #3399ff; }
+
+        /* ---- Search section (between header/nav and curriculum) ---- */
+        .learn-search-window {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .learn-search-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .learn-search-form .back-btn {
+            margin-top: 0;
+        }
+        .learn-search-input {
+            flex: 1;
+            min-width: 200px;
+            min-height: 0;
+            margin: 0;
+            padding: 13px 12px;
+            background: #000;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 1em;
+            line-height: 1.2;
+        }
+        .learn-search-input:focus {
+            outline: none;
+            box-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+        }
+        .learn-clear-btn {
+            white-space: nowrap;
+        }
+        .learn-search-form button[type="submit"],
+        .learn-clear-btn {
+            width: 110px;
+            height: 50px;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* ---- Two-column layout: curriculum + difficulty sidebar ---- */
+        .learn-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .learn-main-col {
+            flex: 1;
+            min-width: 0;
+        }
+        .learn-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+        }
+        .learn-sidebar h3 {
+            margin-top: 0;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+        }
+        .learn-results-meta {
+            opacity: 0.8;
+            font-size: 0.9em;
+            margin: 0 0 15px 0;
+        }
+
+        /* ---- Difficulty filter links ---- */
+        .diff-filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .diff-link {
+            display: block;
+            padding: 8px 10px;
+            border: 1px solid currentColor;
+            border-radius: 3px;
+            text-decoration: none;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        .diff-link-all { color: #ffffff; border-color: #ffffff; }
+        .diff-link.diff-link-all.diff-link-active   { background: #ffffff; color: #000; }
+        .diff-link.diff-10.diff-link-active          { background: #00ff66; color: #000; }
+        .diff-link.diff-11.diff-link-active          { background: #ffcc00; color: #000; }
+        .diff-link.diff-12.diff-link-active           { background: #ff3030; color: #000; }
+        .diff-link.diff-college.diff-link-active      { background: #3399ff; color: #000; }
+
+        /* ---- Pagination ---- */
+        .learn-pagination {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 255, 102, 0.2);
+        }
+        .page-link {
+            padding: 6px 12px;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .page-link-active {
+            background: #00ff66;
+            color: #000;
+            font-weight: bold;
+        }
+        .page-link-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            border-color: #555;
+            color: #555;
+        }
+        .page-ellipsis {
+            padding: 6px 4px;
+            opacity: 0.6;
+        }
+        .page-info {
+            opacity: 0.7;
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 700px) {
+            .learn-layout { flex-direction: column; }
+            .learn-sidebar { width: 100%; position: static; }
+            .diff-filter-list { flex-direction: row; flex-wrap: wrap; }
+            .diff-link { flex: 1; min-width: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>ChanceField</h1>
+    <p>> TRAINING MODULES</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<section class="window learn-search-window">
+    <form action="/learn" method="get" class="learn-search-form">
+        <input type="hidden" name="difficulty" value="{{difficulty}}">
+        <label for="learn-search-q" class="sr-only">Search lessons by title or description</label>
+        <input
+            type="text"
+            id="learn-search-q"
+            name="q"
+            value="{{search_value}}"
+            placeholder="Search lessons by title or description..."
+            class="learn-search-input"
+        >
+        <button type="submit" class="back-btn">Search</button>
+        {{clear_search}}
+    </form>
+</section>
+
+<main style="max-width: 1200px; margin: 0 auto;">
+    <div class="learn-layout">
+
+        <section class="window learn-main-col">
+            <h2>CURRICULUM</h2>
+            <p class="learn-results-meta">{{results_meta}}</p>
+
+            <div class="learn-grid">
+                {{lessons}}
+            </div>
+
+            <div class="learn-pagination">
+                {{pagination}}
+            </div>
+        </section>
+
+        <aside class="window learn-sidebar">
+            <h3>GRADE</h3>
+            <div class="diff-filter-list">
+                {{diff_sidebar}}
+            </div>
+        </aside>
+
+    </div>
+</main>
+
+</body>
+</html>

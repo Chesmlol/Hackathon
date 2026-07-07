@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/blog.css">
+    <script src="/notify.js"></script>
+    <script src="/blog.js"></script>
+</head>
+<body class="oj-bg">
+<header>
+    <h1>ChanceField</h1>
+    <p>&gt; BLOG POST</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<main style="max-width: 900px; margin: 0 auto;">
+    <section class="window">
+        <div class="comment-item blog-card" style="border:none; background:none; padding:0;">
+            <div class="comment-vote blog-vote" data-post-id="{{post_id}}">
+                <button type="button" class="vote-btn vote-up{{vote_up_active}}" data-vote="1" aria-label="Upvote post">▲</button>
+                <span class="vote-score">{{score}}</span>
+                <button type="button" class="vote-btn vote-down{{vote_down_active}}" data-vote="-1" aria-label="Downvote post">▼</button>
+            </div>
+            <div class="comment-body">
+                <h1 class="oj-title" style="text-align:left; border:none; margin:0; padding:0; font-size:2.2rem;">{{title}}</h1>
+                <div class="comment-meta" style="margin-top:10px;">
+                    {{author_html}}
+                    <span class="comment-time">{{time_ago}}</span>
+                </div>
+                <p class="comment-text" style="margin-top:20px; font-size:1.2rem;">{{content}}</p>
+            </div>
+        </div>
+
+        <div style="margin-top:20px;">
+            <a href="/blog" class="back-btn">&larr; Back to Blog</a>
+        </div>
+
+        <div class="comments-section" id="comments-section" data-post-id="{{post_id}}">
+            <h2>Comments</h2>
+
+            <div class="comment-guidelines">
+                <strong>Community Guidelines:</strong> Be respectful — no harassment, hate speech,
+                or spam. Don't post personal information (emails, phone numbers, or anyone's
+                real contact details). 500 characters max.
+            </div>
+
+            <div id="comment-form-area"></div>
+
+            <div id="comment-list" class="comment-list" aria-live="polite">
+                <p class="comment-empty">Loading comments…</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+(function () {
+    const section = document.getElementById('comments-section');
+    if (!section) return;
+
+    const postId = section.dataset.postId;
+    const formArea = document.getElementById('comment-form-area');
+    const listEl = document.getElementById('comment-list');
+    const MAX_LEN = 500;
+
+    function renderForm(loggedIn) {
+        formArea.innerHTML = '';
+        if (!loggedIn) {
+            const p = document.createElement('p');
+            p.className = 'comment-login-prompt';
+            const span = document.createElement('span');
+            span.textContent = 'Log in to join the discussion.';
+            const a = document.createElement('a');
+            a.href = '/frontend/login.html';
+            a.textContent = 'Log In';
+            a.className = 'back-btn';
+            p.appendChild(span);
+            p.appendChild(a);
+            formArea.appendChild(p);
+            return;
+        }
+
+        const wrap = document.createElement('div');
+        wrap.className = 'comment-form';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', 'comment-input');
+        label.className = 'sr-only';
+        label.textContent = 'Write a comment';
+
+        const textarea = document.createElement('textarea');
+        textarea.id = 'comment-input';
+        textarea.className = 'comment-input';
+        textarea.maxLength = MAX_LEN;
+        textarea.rows = 3;
+        textarea.placeholder = 'Share your thoughts...';
+
+        const row = document.createElement('div');
+        row.className = 'comment-form-row';
+
+        const counter = document.createElement('span');
+        counter.className = 'comment-counter';
+        counter.textContent = `0 / ${MAX_LEN}`;
+
+        const submitBtn = document.createElement('button');
+        submitBtn.type = 'button';
+        submitBtn.className = 'back-btn';
+        submitBtn.textContent = 'Post Comment';
+
+        textarea.addEventListener('input', () => {
+            counter.textContent = `${textarea.value.length} / ${MAX_LEN}`;
+        });
+
+        submitBtn.addEventListener('click', async () => {
+            const content = textarea.value.trim();
+            if (!content) { showNotification('Write something before posting.', 'error'); return; }
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/blog_comments/${postId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    showNotification(data.msg || 'Could not post comment.', 'error');
+                } else {
+                    textarea.value = '';
+                    counter.textContent = `0 / ${MAX_LEN}`;
+                    appendComment(data.comment);
+                    showNotification('Comment posted!', 'success');
+                }
+            } catch (e) {
+                showNotification('Error posting comment.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        row.appendChild(counter);
+        row.appendChild(submitBtn);
+        wrap.appendChild(label);
+        wrap.appendChild(textarea);
+        wrap.appendChild(row);
+        formArea.appendChild(wrap);
+    }
+
+    function buildCommentEl(c) {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.dataset.id = c.id;
+
+        const body = document.createElement('div');
+        body.className = 'comment-body';
+
+        const meta = document.createElement('div');
+        meta.className = 'comment-meta';
+
+        const avatar = document.createElement('img');
+        avatar.className = 'comment-avatar';
+        avatar.src = c.avatar_url;
+        avatar.alt = '';
+
+        const author = document.createElement('a');
+        author.className = 'comment-author';
+        author.href = `/user/${c.username}`;
+        author.textContent = c.display_name;
+
+        const time = document.createElement('span');
+        time.className = 'comment-time';
+        time.textContent = c.created_at;
+
+        meta.appendChild(avatar);
+        meta.appendChild(author);
+        meta.appendChild(time);
+
+        const text = document.createElement('p');
+        text.className = 'comment-text';
+        text.textContent = c.content;
+
+        body.appendChild(meta);
+        body.appendChild(text);
+
+        if (c.is_owner) {
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'comment-delete-btn';
+            delBtn.textContent = 'Delete';
+            delBtn.addEventListener('click', async () => {
+                if (!confirm('Delete this comment?')) return;
+                try {
+                    const res = await fetch(`/api/blog_comments/${c.id}/delete`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        item.remove();
+                        if (!listEl.querySelector('.comment-item')) {
+                            const p = document.createElement('p');
+                            p.className = 'comment-empty';
+                            p.textContent = 'No comments yet — be the first to share a thought!';
+                            listEl.appendChild(p);
+                        }
+                    } else {
+                        showNotification(data.msg || 'Could not delete comment.', 'error');
+                    }
+                } catch (e) {
+                    showNotification('Error deleting comment.', 'error');
+                }
+            });
+            body.appendChild(delBtn);
+        }
+
+        item.appendChild(body);
+        return item;
+    }
+
+    function appendComment(c) {
+        const empty = listEl.querySelector('.comment-empty');
+        if (empty) empty.remove();
+        listEl.appendChild(buildCommentEl(c));
+    }
+
+    async function loadComments() {
+        try {
+            const res = await fetch(`/api/blog_comments/${postId}`);
+            const data = await res.json();
+            renderForm(data.logged_in);
+            listEl.innerHTML = '';
+            if (!data.comments || data.comments.length === 0) {
+                const p = document.createElement('p');
+                p.className = 'comment-empty';
+                p.textContent = 'No comments yet — be the first to share a thought!';
+                listEl.appendChild(p);
+                return;
+            }
+            data.comments.forEach(c => listEl.appendChild(buildCommentEl(c)));
+        } catch (e) {
+            listEl.innerHTML = '';
+            const p = document.createElement('p');
+            p.className = 'comment-empty';
+            p.textContent = 'Could not load comments.';
+            listEl.appendChild(p);
+        }
+    }
+
+    loadComments();
+})();
+</script>
+</body>
+</html>

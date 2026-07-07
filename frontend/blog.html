@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChanceField - Blog</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/blog.css">
+    <script src="/notify.js"></script>
+    <script src="/blog.js"></script>
+</head>
+<body class="oj-bg">
+<header>
+    <h1>ChanceField</h1>
+    <p>&gt; COMMUNITY BLOG</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<main style="max-width: 1200px; margin: 0 auto;">
+    <section class="window">
+        <h2>BLOG</h2>
+
+        {{guidelines}}
+
+        {{composer}}
+
+        <div class="comment-list" style="margin-top:24px;">
+            {{posts}}
+        </div>
+
+        <div class="archives-pagination">
+            {{pagination}}
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

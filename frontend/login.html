@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RetroCode Academy</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/notify.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>ChanceField</h1>
+    <p>> AUTHENTICATION REQUIRED</p>
+</header>
+
+<nav>
+    {{nav}}
+</nav>
+
+<div class="window" style="max-width:500px;margin:100px auto;">
+    <h2>LOGIN</h2>
+
+    <label for="login-username" class="sr-only">Username</label>
+    <input type="text" id="login-username" placeholder="Username" autocomplete="username" required>
+
+    <label for="login-password" class="sr-only">Password</label>
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+
+    <button type="button" onclick="handleLogin()">LOGIN</button>
+
+    <br><br>
+    <a href="/" class="back-btn">← Back Home</a>
+</div>
+
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleLogin();
+});
+
+async function handleLogin() {
+    const usernameElement = document.getElementById('login-username');
+    const passwordElement = document.getElementById('login-password');
+
+    if (!usernameElement.value || !passwordElement.value) {
+        showNotification("Please enter both username and password.", "error");
+        return;
+    }
+
+    // Matches the application/x-www-form-urlencoded header the backend reads
+    const details = new URLSearchParams();
+    details.append('username', usernameElement.value);
+    details.append('password', passwordElement.value);
+
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: details
+        });
+
+        const result = await response.text();
+        if (result === "7") {
+            showNotification("Login successful!", "success");
+            setTimeout(() => { window.location.href = "/"; }, 800); // Directs user back to main application entrypoint
+        } else {
+            showNotification("Invalid credentials.", "error");
+        }
+    } catch (error) {
+        console.error("Error during authentication request:", error);
+        showNotification("Could not connect to the authentication server.", "error");
+    }
+}
+</script>
+</body>
+</html>
