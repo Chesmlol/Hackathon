@@ -28,9 +28,11 @@
             border: 1px solid currentColor;
         }
         .badge-type   { color: #00ff66; border-color: #00ff66; }
+        .badge-video  { color: #ff9933; border-color: #ff9933; }
         .diff-10      { color: #00ff66; border-color: #00ff66; }
         .diff-11      { color: #ffcc00; border-color: #ffcc00; }
         .diff-12      { color: #ff3030; border-color: #ff3030; }
+        .diff-college { color: #3399ff; border-color: #3399ff; }
         .lesson-desc {
             margin: 15px 0;
             opacity: 0.9;
@@ -77,6 +79,7 @@
     <section class="window lesson-window">
         <div class="lesson-badges">
             <span class="badge badge-type">{{type_icon}} {{type_label}}</span>
+            {{video_badge}}
             <span class="badge {{diff_class}}">{{diff_label}}</span>
         </div>
         <h2>{{title}}</h2>

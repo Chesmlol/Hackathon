@@ -1259,9 +1259,13 @@ def learn_page():
     for lesson_id, title, desc, link, ltype, ldiff in rows:
         ltype = (ltype or "text").lower()
         ldiff = (ldiff or "10").lower()
+        video_badge = ""
+        if ltype == "article" and link:
+            video_badge = '<span class="badge badge-video">\U0001f3a5 VIDEO</span>'
         cards += f'''<div class="learn-module">
             <div class="learn-badges">
                 <span class="badge badge-type">{type_label.get(ltype, "\U0001f4c4 TEXT")}</span>
+                {video_badge}
                 <span class="badge {diff_class.get(ldiff, "diff-10")}">{grade_label(ldiff)}</span>
             </div>
             <h3>{title}</h3>
@@ -1336,6 +1340,7 @@ def lesson_page(lesson_id):
     diff_class = {"10": "diff-10", "11": "diff-11", "12": "diff-12", "college": "diff-college"}.get(ldiff, "diff-10")
 
     mathjax_tag = ""  # only injected for type == "article" (see below)
+    video_badge = ""  # only set when an article lesson also has a video (see below)
 
     if ltype == "video":
         src = resolve_lesson_link(link)
@@ -1349,8 +1354,21 @@ def lesson_page(lesson_id):
         # straight into the page, styled the same as the rest of the site
         # (black background, neon-green accents) instead of embedding a
         # white-background PDF. MathJax renders the math client-side.
+        #
+        # Article lessons don't otherwise use the 'link' column, so it's
+        # reused here as an OPTIONAL video slot: if a link is set (e.g. a
+        # Manim-rendered .mp4), it's embedded above the article text. Leave
+        # link empty for text-only lessons.
         type_icon, type_label = "\U0001f4d6", "ARTICLE"
-        content = f'<div class="lesson-article">{article_content or ""}</div>'
+        video_html = ""
+        if link:
+            vsrc = resolve_lesson_link(link)
+            video_html = f'''<video controls style="width:100%; max-height:60vh; border:1px solid #00ff66; border-radius:4px; background:#000; margin-bottom:20px; display:block;">
+                <source src="{vsrc}" type="video/mp4">
+                Your browser doesn't support inline video. <a href="{vsrc}">Download the video</a> instead.
+            </video>'''
+            video_badge = '<span class="badge badge-video">\U0001f3a5 VIDEO</span>'
+        content = video_html + f'<div class="lesson-article">{article_content or ""}</div>'
         mathjax_tag = '''<script>
     window.MathJax = { tex: { inlineMath: [["\\\\(", "\\\\)"]], displayMath: [["\\\\[", "\\\\]"]] } };
 </script>
@@ -1373,6 +1391,7 @@ def lesson_page(lesson_id):
             .replace("{{description}}", desc or "")\
             .replace("{{type_icon}}", type_icon)\
             .replace("{{type_label}}", type_label)\
+            .replace("{{video_badge}}", video_badge)\
             .replace("{{diff_class}}", diff_class)\
             .replace("{{diff_label}}", diff_label)\
             .replace("{{content}}", content)\
