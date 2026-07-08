@@ -16,8 +16,24 @@
     border: 2px solid #00ff66;
     padding: 8px 14px;
     font-family: inherit;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.1rem);
     width: auto;
+}
+
+.judge-lang-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    background: black;
+    color: #00ff66;
+    border: 2px solid #00ff66;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.1rem);
+    font-weight: bold;
+    text-shadow: 0 0 6px rgba(0, 255, 100, 0.6);
+    white-space: nowrap;
 }
 
 .judge-toolbar-hint {
@@ -41,8 +57,8 @@
 
 .judge-editor-wrap .CodeMirror {
     font-family: 'Courier New', monospace;
-    font-size: 1.05rem;
-    height: 360px;
+    font-size: clamp(0.95rem, 0.85rem + 0.25vw, 1.05rem);
+    height: clamp(260px, 45vh, 420px);
 }
 
 .judge-verdict-area {

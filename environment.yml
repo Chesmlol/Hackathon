@@ -1,0 +1,16 @@
+# Starting-point environment for the SageMath install ChanceField's judge
+# needs (see README.md "SageMath" section). This only pins `sage` itself —
+# once you have a working install on a given machine, regenerate this file
+# from it so the exact GSL/MPFR/PARI/etc. versions are captured too:
+#
+#   conda env export -n chancefield-sage --no-builds > environment.yml
+#
+# That protects the next machine (or your future self) from the kind of
+# dependency drift that breaks Sage when unrelated packages get installed
+# into the same env later.
+name: chancefield-sage
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - sage

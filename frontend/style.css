@@ -254,10 +254,11 @@ body::after {
    ════════════════════════════════ */
 .oj-grid {
     display: grid;
-    grid-template-columns: 220px 1fr 220px;
-    gap: 12px;
+    grid-template-columns: clamp(170px, 15vw, 230px) minmax(0, 1fr) clamp(170px, 15vw, 230px);
+    gap: clamp(10px, 1vw, 16px);
     width: 100%;
-    margin-top: 24px;
+    max-width: 1500px;
+    margin: 24px auto 0;
 }
 
 .oj-l, .oj-r {
@@ -269,14 +270,14 @@ body::after {
     background: black;
     color: #00ff66;
     border: 2px solid #00ff66;
-    padding: 18px;
-    font-size: 1.4rem;
+    padding: clamp(12px, 1.4vw, 18px);
+    font-size: clamp(1.1rem, 0.9rem + 0.5vw, 1.3rem);
     font-family: inherit;
     cursor: pointer;
     text-align: center;
     width: 100%;
     transition: 0.2s;
-    margin-bottom: 22px;
+    margin-bottom: clamp(16px, 2vw, 22px);
     text-transform: uppercase;
 }
 
@@ -294,17 +295,17 @@ body::after {
 .oj-head {
     background: #00ff66;
     color: black;
-    padding: 12px 14px;
+    padding: clamp(10px, 1vw, 12px) 14px;
     font-weight: bold;
     text-align: center;
-    font-size: 1.3rem;
+    font-size: clamp(1.05rem, 0.9rem + 0.4vw, 1.2rem);
 }
 
 .oj-body p {
-    padding: 12px 14px;
+    padding: clamp(10px, 1vw, 12px) 14px;
     border-bottom: 1px dashed rgba(0,255,100,0.3);
     margin: 0;
-    font-size: 1.15rem;
+    font-size: clamp(1rem, 0.9rem + 0.2vw, 1.1rem);
 }
 
 .oj-m {
@@ -323,35 +324,33 @@ body::after {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 48px;
-    min-height: 65vh;
+    padding: clamp(20px, 3vw, 40px);
+    min-height: 60vh;
 }
 
 #problem-main .oj-title {
-    font-size: 3rem;
+    font-size: clamp(1.7rem, 1.1rem + 2vw, 2.5rem);
 }
 
 #problem-main .oj-stmt {
-    font-size: 1.3rem;
+    font-size: clamp(1rem, 0.85rem + 0.4vw, 1.15rem);
     line-height: 1.7;
     margin-bottom: 10px;
 }
 
 #problem-main .oj-content h2 {
-    font-size: 1.7rem;
+    font-size: clamp(1.15rem, 0.95rem + 0.5vw, 1.4rem);
 }
 
 #problem-main .oj-inp {
-    font-size: 1.35rem;
-    padding: 16px;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+    padding: clamp(10px, 1vw, 14px);
 }
 
 @media (max-width: 700px) {
     #problem-main {
-        padding: 26px;
         min-height: auto;
     }
-    #problem-main .oj-title { font-size: 2.2rem; }
 }
 
 .oj-title {
@@ -359,9 +358,9 @@ body::after {
     text-shadow: 0 0 10px #ff3030;
     text-align: center;
     border-bottom: 2px dashed #00ff66;
-    padding-bottom: 18px;
-    margin-bottom: 24px;
-    font-size: 2.6rem;
+    padding-bottom: clamp(12px, 1.5vw, 18px);
+    margin-bottom: clamp(16px, 2vw, 24px);
+    font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.2rem);
 }
 
 .oj-content h2 {
@@ -682,8 +681,8 @@ body::after {
    Comments section (problem page)
    ════════════════════════════════ */
 .comments-section {
-    margin-top: 70px;
-    padding-top: 30px;
+    margin-top: clamp(40px, 6vw, 70px);
+    padding-top: clamp(18px, 3vw, 30px);
     border-top: 2px dashed rgba(0, 255, 100, 0.3);
 }
 

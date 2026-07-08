@@ -11,8 +11,6 @@
     <script src="/notify.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 </head>
 <body class="oj-bg">
     <header>
@@ -54,14 +52,8 @@
                 <h2>Your Solution</h2>
 
                 <div class="judge-toolbar">
-                    <label for="lang-select" class="sr-only">Programming language</label>
-                    <select id="lang-select" class="judge-lang-select">
-                        <option value="python3">Python 3</option>
-                        <option value="cpp">C++17</option>
-                        <option value="java">Java</option>
-                        <option value="javascript">JavaScript (Node.js)</option>
-                    </select>
-                    <span class="judge-toolbar-hint">Pick a language, write your solution, then Run &amp; Submit to judge it.</span>
+                    <span class="judge-lang-badge">⌁ SageMath</span>
+                    <span class="judge-toolbar-hint">Write your solution in SageMath, then Run &amp; Submit to judge it.</span>
                     <button type="button" id="reset-template-btn" class="back-btn judge-reset-btn">Reset Template</button>
                 </div>
 
@@ -109,25 +101,12 @@
     </div>
 
     <script>
-    // ── Judge: code editor, language switching, run/submit ──
+    // ── Judge: code editor, run/submit (SageMath only) ──
     (function () {
         const problemId = document.getElementById('comments-section').dataset.problemId;
 
-        const LANG_TEMPLATES = {
-            python3: "# Write your solution here\nimport sys\n\ndef main():\n    pass\n\nif __name__ == '__main__':\n    main()\n",
-            cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    return 0;\n}\n",
-            java: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n\n    }\n}\n",
-            javascript: "// Write your solution here\nconst data = require('fs').readFileSync('/dev/stdin', 'utf8');\n\n"
-        };
+        const SAGE_TEMPLATE = "# Write your SageMath solution here\n# The Sage preparser is active (e.g. 2^10 means exponentiation,\n# and integer literals are Sage Integers by default).\n\ndef main():\n    pass\n\nmain()\n";
 
-        const CM_MODES = {
-            python3: 'python',
-            cpp: 'text/x-c++src',
-            java: 'text/x-java',
-            javascript: 'javascript'
-        };
-
-        const langSelect = document.getElementById('lang-select');
         const resetBtn = document.getElementById('reset-template-btn');
         const runBtn = document.getElementById('run-btn');
         const verdictArea = document.getElementById('verdict-area');
@@ -136,44 +115,30 @@
 
         const cm = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
             lineNumbers: true,
-            mode: CM_MODES[langSelect.value],
+            mode: 'python',
             theme: 'dracula',
             indentUnit: 4,
             tabSize: 4,
             viewportMargin: Infinity
         });
-        cm.setSize('100%', '360px');
+        cm.setSize('100%', null);
 
-        // Restore this browser's last code/language for this problem, if any,
-        // so a refresh doesn't lose work in progress.
+        // Restore this browser's last code for this problem, if any, so a
+        // refresh doesn't lose work in progress.
         let saved = null;
-        try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
-        if (saved && saved.language && LANG_TEMPLATES[saved.language] !== undefined) {
-            langSelect.value = saved.language;
-            cm.setOption('mode', CM_MODES[saved.language]);
-            cm.setValue(saved.code || LANG_TEMPLATES[saved.language]);
-        } else {
-            cm.setValue(LANG_TEMPLATES[langSelect.value]);
-        }
+        try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { saved = null; }
+        cm.setValue(saved || SAGE_TEMPLATE);
 
         function persist() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({ language: langSelect.value, code: cm.getValue() }));
+                localStorage.setItem(STORAGE_KEY, cm.getValue());
             } catch (e) { /* ignore quota errors */ }
         }
         cm.on('change', persist);
 
-        langSelect.addEventListener('change', () => {
-            cm.setOption('mode', CM_MODES[langSelect.value]);
-            if (!cm.getValue().trim()) {
-                cm.setValue(LANG_TEMPLATES[langSelect.value]);
-            }
-            persist();
-        });
-
         resetBtn.addEventListener('click', () => {
             if (cm.getValue().trim() && !confirm('Reset to the starter template? This will erase your current code.')) return;
-            cm.setValue(LANG_TEMPLATES[langSelect.value]);
+            cm.setValue(SAGE_TEMPLATE);
             persist();
         });
 
@@ -228,7 +193,7 @@
                 const res = await fetch('/submit_code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: problemId, language: langSelect.value, code: code })
+                    body: JSON.stringify({ id: problemId, language: 'sage', code: code })
                 });
                 const data = await res.json();
                 if (!data.success) {

@@ -1,7 +1,9 @@
 from flask import Flask, request, make_response, redirect, send_from_directory, jsonify
 from datetime import datetime, timedelta
-import secrets, sqlite3, re, os, math, html, subprocess, tempfile, shutil
+import secrets, sqlite3, re, os, math, html, subprocess, tempfile, shutil, json
 from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 from werkzeug.security import generate_password_hash, check_password_hash
 try:
     import resource  # POSIX only; used for best-effort CPU/memory limits on judged code
@@ -80,7 +82,7 @@ def init():
         if "official_solution" not in prob_cols2:
             c.execute("ALTER TABLE initial_misions ADD COLUMN official_solution TEXT")
         if "official_solution_lang" not in prob_cols2:
-            c.execute("ALTER TABLE initial_misions ADD COLUMN official_solution_lang TEXT DEFAULT 'cpp'")
+            c.execute("ALTER TABLE initial_misions ADD COLUMN official_solution_lang TEXT DEFAULT 'sage'")
         
         # Create solved_problems table (This was missing!)
         c.execute("""CREATE TABLE IF NOT EXISTS solved_problems (
@@ -730,8 +732,8 @@ VALID_SORTS = {"id", "title", "solved"}
 
 # Solutions (official + user-submitted) only exist for code-type problems.
 SOLUTION_CODE_MAX = 20000
-VALID_SOLUTION_LANGS = {"cpp", "java", "python"}
-SOLUTION_LANG_LABELS = {"cpp": "C++", "java": "Java", "python": "Python"}
+VALID_SOLUTION_LANGS = {"sage"}
+SOLUTION_LANG_LABELS = {"sage": "SageMath"}
 
 @app.route("/practice")
 def practice_page():
@@ -936,85 +938,123 @@ def submit():
 # submissions inside Docker (or gVisor, Firecracker, Judge0, etc.) instead.
 # ────────────────────────────────────
 CODE_LANGUAGES = {
-    "python3": "Python 3",
-    "cpp": "C++17",
-    "java": "Java",
-    "javascript": "JavaScript (Node.js)",
+    "sage": "SageMath",
 }
-CODE_TIME_LIMIT = 5          # seconds allowed for the run step
-CODE_COMPILE_TIMEOUT = 20    # seconds allowed for compilation (C++/Java)
+CODE_TIME_LIMIT = 5          # seconds allowed for the run step (fallback; sage uses SAGE_TIME_LIMIT below)
+SAGE_TIME_LIMIT = 30         # seconds allowed for Sage — its interpreter has a much heavier startup than plain Python
+CODE_COMPILE_TIMEOUT = 20    # seconds allowed for compilation (kept in case a compiled language is added later)
 CODE_MAX_LEN = 20000         # max characters of submitted source
 CODE_MAX_OUTPUT = 20000      # captured stdout/stderr are truncated to this
 
-def _limit_judge_resources():
+# Command used to invoke Sage. Defaults to whatever 'sage' resolves to on
+# PATH (same as running `sage` yourself in a terminal). If Sage is installed
+# somewhere that isn't on the PATH the Flask process sees (e.g. a conda env,
+# or a tarball install under $HOME), set SAGE_BINARY to the full path before
+# starting the server, e.g.:
+#   export SAGE_BINARY=/home/youruser/SageMath/sage
+SAGE_BINARY = os.environ.get("SAGE_BINARY", "sage")
+
+# How the judge actually runs Sage code:
+#   "local"  (default) — subprocess to a real local `sage` install (see
+#             SAGE_BINARY above). Fast, no network dependency, but you have
+#             to maintain a working Sage install on this machine.
+#   "remote" — POSTs the code to the public SageMathCell service instead
+#             (https://sagecell.sagemath.org) so no local Sage install is
+#             needed at all. Trade-off: depends on a shared public server
+#             with no SLA — expect occasional slowness/unavailability, and
+#             don't rely on this for high submission volume or graded
+#             production use. Flip with:
+#   export SAGE_MODE=remote
+SAGE_MODE = os.environ.get("SAGE_MODE", "local").lower()
+SAGECELL_URL = "https://sagecell.sagemath.org/service"
+SAGECELL_TIMEOUT = 30  # the public server itself times out around here
+
+def _limit_judge_resources(time_limit=CODE_TIME_LIMIT):
     """preexec_fn for the judged subprocess: best-effort CPU time, memory,
     and process-count caps (defense in depth, not a full sandbox — see the
-    note above). POSIX only; silently skipped if unavailable."""
+    note above). POSIX only; silently skipped if unavailable.
+    Memory cap is higher than a bare-Python judge would need since Sage's
+    runtime (GAP/Singular/PARI/OpenBLAS/etc. loaded alongside it) is much
+    heavier. RLIMIT_AS caps *virtual* address space, not just RSS -- and
+    OpenBLAS reserves per-thread virtual buffers scaled to detected CPU
+    core count on startup, which alone can exceed 1.5GB of virtual space
+    even though real usage is far lower (surfaces as an opaque 'OpenBLAS
+    error: Memory allocation still failed' with no Python traceback at
+    all). Threads are pinned to 1 in judge_env below to keep that
+    reservation small, but the cap is still raised to give real headroom."""
     if resource is None:
         return
     try:
-        resource.setrlimit(resource.RLIMIT_CPU, (CODE_TIME_LIMIT, CODE_TIME_LIMIT + 1))
-        resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
-        resource.setrlimit(resource.RLIMIT_NPROC, (64, 64))
+        resource.setrlimit(resource.RLIMIT_CPU, (time_limit, time_limit + 1))
+        resource.setrlimit(resource.RLIMIT_AS, (4096 * 1024 * 1024, 4096 * 1024 * 1024))
+        resource.setrlimit(resource.RLIMIT_NPROC, (128, 128))
     except Exception:
         pass
 
 def run_code_submission(language, code, stdin_data):
-    """Compiles (if needed) and runs `code` against `stdin_data`.
+    """Runs `code` against `stdin_data` using SageMath — the only language
+    this judge accepts. Dispatches to a local subprocess or the public
+    SageMathCell service depending on SAGE_MODE (see its definition above).
     Returns (verdict, stdout, stderr) where verdict is one of:
-    'ok', 'compile_error', 'runtime_error', 'time_limit_exceeded', 'internal_error'."""
+    'ok', 'runtime_error', 'time_limit_exceeded', 'internal_error'."""
+    if language != "sage":
+        return "internal_error", "", "Unsupported language."
+    if SAGE_MODE == "remote":
+        return _run_sage_remote(code, stdin_data)
+    return _run_sage_local(code, stdin_data)
+
+def _run_sage_local(code, stdin_data):
+    """Runs `code` via a real local Sage install (subprocess). Sage is
+    interpreted (via its own preparser on top of Python), so there's no
+    separate compile step."""
+    # Resolve the sage executable up front so a missing/unfindable binary
+    # gets a clear, actionable message instead of a bare FileNotFoundError.
+    # shutil.which() handles the common case (sage on PATH); SAGE_BINARY
+    # can also be set to an absolute path directly.
+    sage_path = shutil.which(SAGE_BINARY)
+    if not sage_path and os.path.isabs(SAGE_BINARY) and os.access(SAGE_BINARY, os.X_OK):
+        sage_path = SAGE_BINARY
+    if not sage_path:
+        return "internal_error", "", (
+            f"Could not find the Sage executable (looked for '{SAGE_BINARY}' on PATH). "
+            "Confirm 'sage' works in a terminal on this machine (try `which sage` or "
+            "`sage --version`), then either make sure the account running this Flask "
+            "server has that same PATH, or set the SAGE_BINARY environment variable to "
+            "Sage's full path (e.g. export SAGE_BINARY=/home/youruser/SageMath/sage) "
+            "before starting the server. Alternatively, set SAGE_MODE=remote to use "
+            "the public SageMathCell service instead of a local install."
+        )
+
     workdir = tempfile.mkdtemp(prefix="judge_")
-    preexec = _limit_judge_resources if os.name == "posix" else None
     try:
-        if language == "python3":
-            src_path = os.path.join(workdir, "main.py")
-            with open(src_path, "w", encoding="utf-8") as f:
-                f.write(code)
-            run_cmd = ["python3", "main.py"]
+        src_path = os.path.join(workdir, "main.sage")
+        with open(src_path, "w", encoding="utf-8") as f:
+            f.write(code)
+        run_cmd = [sage_path, "main.sage"]
 
-        elif language == "cpp":
-            src_path = os.path.join(workdir, "main.cpp")
-            with open(src_path, "w", encoding="utf-8") as f:
-                f.write(code)
-            bin_path = os.path.join(workdir, "main_bin")
-            try:
-                comp = subprocess.run(
-                    ["g++", "-O2", "-std=c++17", "-o", bin_path, src_path],
-                    cwd=workdir, capture_output=True, text=True, timeout=CODE_COMPILE_TIMEOUT
-                )
-            except FileNotFoundError:
-                return "internal_error", "", "g++ is not installed on this server."
-            except subprocess.TimeoutExpired:
-                return "compile_error", "", "Compilation timed out."
-            if comp.returncode != 0:
-                return "compile_error", "", comp.stderr[:CODE_MAX_OUTPUT]
-            run_cmd = [bin_path]
+        # Sage's interpreter has a much heavier startup than plain Python
+        # (loading GAP/Singular/PARI/etc.), so it gets its own, longer time
+        # budget rather than the generic CODE_TIME_LIMIT.
+        preexec = (lambda: _limit_judge_resources(SAGE_TIME_LIMIT)) if os.name == "posix" else None
 
-        elif language == "java":
-            src_path = os.path.join(workdir, "Main.java")
-            with open(src_path, "w", encoding="utf-8") as f:
-                f.write(code)
-            try:
-                comp = subprocess.run(
-                    ["javac", "Main.java"],
-                    cwd=workdir, capture_output=True, text=True, timeout=CODE_COMPILE_TIMEOUT
-                )
-            except FileNotFoundError:
-                return "internal_error", "", "javac is not installed on this server."
-            except subprocess.TimeoutExpired:
-                return "compile_error", "", "Compilation timed out."
-            if comp.returncode != 0:
-                return "compile_error", "", comp.stderr[:CODE_MAX_OUTPUT]
-            run_cmd = ["java", "-cp", workdir, "Main"]
-
-        elif language == "javascript":
-            src_path = os.path.join(workdir, "main.js")
-            with open(src_path, "w", encoding="utf-8") as f:
-                f.write(code)
-            run_cmd = ["node", "main.js"]
-
-        else:
-            return "internal_error", "", "Unsupported language."
+        # Sage needs more than a bare PATH to start up: it looks for its
+        # config/cache dir at $HOME/.sage (DOT_SAGE), and installs from
+        # conda/tarballs often rely on other vars (PYTHONHOME, etc.) that
+        # the wrapping `sage` shell script sets up relative to HOME/its own
+        # location. Passing only {"PATH": ...} (the old behavior) left HOME
+        # unset, so Sage would try to create /.sage and fail on every run.
+        # Inherit the full environment instead — the resource limits above
+        # already constrain CPU/memory/process count for the child.
+        judge_env = os.environ.copy()
+        judge_env.setdefault("HOME", tempfile.gettempdir())
+        # Pin BLAS/OpenMP to a single thread: OpenBLAS sizes its per-thread
+        # virtual memory reservation off the number of CPU cores it detects,
+        # which can blow past the RLIMIT_AS cap above on multi-core machines
+        # and fail with an opaque "OpenBLAS error: Memory allocation still
+        # failed" before any judge output is produced. One-off submissions
+        # gain nothing from multi-threaded BLAS anyway.
+        for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "GOTO_NUM_THREADS", "MKL_NUM_THREADS"):
+            judge_env[_var] = "1"
 
         try:
             proc = subprocess.run(
@@ -1023,21 +1063,101 @@ def run_code_submission(language, code, stdin_data):
                 input=stdin_data or "",
                 capture_output=True,
                 text=True,
-                timeout=CODE_TIME_LIMIT,
-                env={"PATH": os.environ.get("PATH", "")},
+                timeout=SAGE_TIME_LIMIT,
+                env=judge_env,
                 preexec_fn=preexec,
             )
         except FileNotFoundError:
-            return "internal_error", "", f"{run_cmd[0]} is not installed on this server."
+            return "internal_error", "", f"'{sage_path}' could not be executed."
         except subprocess.TimeoutExpired:
             return "time_limit_exceeded", "", ""
 
         if proc.returncode != 0:
+            # A shared-library import failure this early means the Sage
+            # *install itself* is broken (e.g. GSL/MPFR version drift from
+            # something else being installed into the same conda env --
+            # see environment.yml) -- Sage crashed before main.sage (the
+            # student's code) ever ran. That's a server/admin problem, not
+            # a bug in the submission, so it must not be shown to students
+            # as a runtime_error on their own code.
+            broken_install = (
+                "ImportError" in proc.stderr and "cannot open shared object file" in proc.stderr
+            ) or "sage.cli.__main__" in proc.stderr or "sage.cli.eval_cmd" in proc.stderr
+            if broken_install:
+                return "internal_error", "", (
+                    "The Sage install on this server failed to start (a shared library "
+                    "could not be loaded) before your code ran -- this is not an issue "
+                    "with your submission. Likely cause: GSL/MPFR version drift in the "
+                    "conda env Sage is installed in (see environment.yml / README.md). "
+                    "Admin: try `conda install -n <sage-env> -c conda-forge gsl "
+                    "--force-reinstall`, or recreate the dedicated env with "
+                    "`conda env create -f environment.yml`. Raw error: " + proc.stderr[:1000]
+                )
+            # Sage reports syntax errors as a non-zero exit with a traceback
+            # on stderr rather than through a separate compile phase, so a
+            # bad submission surfaces here as a runtime error either way.
             return "runtime_error", proc.stdout[:CODE_MAX_OUTPUT], proc.stderr[:CODE_MAX_OUTPUT]
 
         return "ok", proc.stdout[:CODE_MAX_OUTPUT], proc.stderr[:CODE_MAX_OUTPUT]
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
+
+def _run_sage_remote(code, stdin_data):
+    """Runs `code` on the public SageMathCell service instead of a local
+    install (see SAGE_MODE above). Uses the /service endpoint, a simple
+    synchronous wrapper distinct from the full websocket kernel protocol
+    the embedded widget uses — it isn't officially documented, so this is
+    written defensively and may need adjusting if the service's response
+    shape changes.
+
+    SageMathCell has no stdin parameter; it only runs one blob of code. To
+    support problems that feed stdin, submitted `input()` calls are
+    redirected to read from a pre-supplied line iterator built from
+    `stdin_data` instead of a real pipe — this covers the common case but
+    isn't a byte-for-byte match for a real subprocess stdin pipe (e.g. its
+    EOFError timing can differ from CPython's built-in input()).
+    """
+    full_code = code
+    if stdin_data:
+        shim = (
+            "__judge_stdin_lines = iter(" + repr(stdin_data.splitlines()) + ")\n"
+            "def input(*__a, **__k):\n"
+            "    try:\n"
+            "        return next(__judge_stdin_lines)\n"
+            "    except StopIteration:\n"
+            "        raise EOFError('no more input')\n\n"
+        )
+        full_code = shim + code
+
+    try:
+        req = Request(
+            SAGECELL_URL,
+            data=urlencode({"code": full_code}).encode("utf-8"),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        with urlopen(req, timeout=SAGECELL_TIMEOUT) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+    except (URLError, HTTPError) as e:
+        return "internal_error", "", f"Could not reach SageMathCell (SAGE_MODE=remote): {e}"
+    except Exception as e:
+        return "internal_error", "", f"Unexpected error contacting SageMathCell: {e}"
+
+    try:
+        payload = json.loads(raw)
+    except ValueError:
+        return "internal_error", "", f"SageMathCell returned a non-JSON response: {raw[:500]}"
+
+    if not payload.get("success", False):
+        # The /service endpoint isn't fully documented, so this maps
+        # "not success" conservatively to runtime_error rather than
+        # guessing more specifically (e.g. it may also mean a timeout).
+        stdout = payload.get("stdout") or ""
+        stderr = payload.get("stderr") or json.dumps(payload)[:500]
+        return "runtime_error", stdout[:CODE_MAX_OUTPUT], stderr[:CODE_MAX_OUTPUT]
+
+    stdout = (payload.get("stdout") or "")[:CODE_MAX_OUTPUT]
+    stderr = (payload.get("stderr") or "")[:CODE_MAX_OUTPUT]
+    return "ok", stdout, stderr
 
 @app.route("/submit_code", methods=["POST"])
 def submit_code():
@@ -1080,7 +1200,7 @@ def submit_code():
     if verdict == "runtime_error":
         return jsonify({"success": True, "verdict": "runtime_error", "msg": "Runtime Error.", "stdout": stdout, "stderr": stderr})
     if verdict == "time_limit_exceeded":
-        return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": f"Time Limit Exceeded ({CODE_TIME_LIMIT}s).", "stdout": "", "stderr": ""})
+        return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": f"Time Limit Exceeded ({SAGE_TIME_LIMIT}s).", "stdout": "", "stderr": ""})
 
     # verdict == "ok" -> program ran cleanly; now compare its output
     passed = stdout.strip() == (expected_output or "").strip()
@@ -1414,10 +1534,10 @@ DEFAULT_AVATAR = "https://thumbs.dreamstime.com/b/binary-code-matrix-background-
 def solution_page_content(problem_id, official_solution, official_solution_lang, viewer_is_admin):
     """Returns (edit_btn_html, body_html, edit_modal_html) for the official
     solution page. Editing is admin-only; everyone else just views it."""
-    lang = (official_solution_lang or "cpp").lower()
+    lang = (official_solution_lang or "sage").lower()
     if lang not in VALID_SOLUTION_LANGS:
-        lang = "cpp"
-    lang_label = SOLUTION_LANG_LABELS.get(lang, "C++")
+        lang = "sage"
+    lang_label = SOLUTION_LANG_LABELS.get(lang, "SageMath")
 
     edit_btn = ""
     edit_modal = ""
@@ -1426,20 +1546,12 @@ def solution_page_content(problem_id, official_solution, official_solution_lang,
         btn_label = "✎ Edit Solution" if has_solution else "+ Add Solution"
         edit_btn = f'<button type="button" class="back-btn" onclick="openSolEditModal()" style="margin-bottom:20px;">{btn_label}</button>'
         current_code = html.escape(official_solution or "")
-        cpp_sel = "selected" if lang == "cpp" else ""
-        java_sel = "selected" if lang == "java" else ""
-        py_sel = "selected" if lang == "python" else ""
         edit_modal = f'''<div id="sol-edit-backdrop" class="modal-backdrop" style="display:none;" onclick="closeSolEditModal()"></div>
 <div id="sol-edit-modal" class="window modal-window" role="dialog" aria-modal="true" aria-labelledby="sol-edit-title"
      style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:700px; max-width:90vw; background:#000; z-index:1000; padding:30px; border:1px solid #00ff66;">
     <h3 id="sol-edit-title">Edit Official Solution</h3>
 
-    <label for="sol_edit_lang">Language:</label>
-    <select id="sol_edit_lang" class="oj-inp" style="width:100%; margin-bottom:10px;">
-        <option value="cpp" {cpp_sel}>C++</option>
-        <option value="java" {java_sel}>Java</option>
-        <option value="python" {py_sel}>Python</option>
-    </select>
+    <p style="opacity:0.8; margin-bottom:10px;">Language: <strong>⌁ SageMath</strong> (the only language this judge supports)</p>
 
     <label for="sol_edit_content">Solution:</label>
     <textarea id="sol_edit_content" rows="14" maxlength="{SOLUTION_CODE_MAX}" class="comment-input" style="width:100%; font-family:monospace;">{current_code}</textarea>
@@ -1460,7 +1572,7 @@ function closeSolEditModal() {{
 }}
 document.addEventListener('keydown', function (e) {{ if (e.key === 'Escape') closeSolEditModal(); }});
 async function saveSolEdit() {{
-    const language = document.getElementById('sol_edit_lang').value;
+    const language = 'sage';
     const content = document.getElementById('sol_edit_content').value;
     try {{
         const res = await fetch('/api/problem/{problem_id}/solution', {{
@@ -1515,7 +1627,7 @@ def save_official_solution(id):
         return jsonify({"success": False, "msg": "Admin access required."}), 403
 
     data = request.json or {}
-    language = (data.get("language") or "cpp").lower()
+    language = (data.get("language") or "sage").lower()
     if language not in VALID_SOLUTION_LANGS:
         return jsonify({"success": False, "msg": "Invalid language."}), 400
     content = (data.get("content") or "").strip()
@@ -1545,11 +1657,7 @@ def solution_submit_modal_html(problem_id):
     <h3 id="submit-sol-title">Submit Solution</h3>
     <p style="opacity:0.8; margin-bottom:14px;">Help others out by sharing a solution. Please make sure it passes all test cases.</p>
 
-    <div class="sol-lang-tabs">
-        <button type="button" class="sol-lang-tab active" data-lang="cpp">C++</button>
-        <button type="button" class="sol-lang-tab" data-lang="java">Java</button>
-        <button type="button" class="sol-lang-tab" data-lang="python">Python</button>
-    </div>
+    <p style="opacity:0.8; margin-bottom:10px;">Language: <strong>⌁ SageMath</strong></p>
 
     <label for="sol_code" class="sr-only">Solution code</label>
     <textarea id="sol_code" rows="12" maxlength="__CODE_MAX__" placeholder="Paste your solution code here..." class="comment-input" style="width:100%; font-family:monospace; margin-top:10px;"></textarea>
@@ -1570,7 +1678,7 @@ def solution_submit_modal_html(problem_id):
 </div>
 
 <script>
-var __selectedSolLang = 'cpp';
+var __selectedSolLang = 'sage';
 function openSubmitSolModal() {
     document.getElementById('submit-sol-modal').style.display = 'block';
     document.getElementById('submit-sol-backdrop').style.display = 'block';
@@ -1580,13 +1688,6 @@ function closeSubmitSolModal() {
     document.getElementById('submit-sol-backdrop').style.display = 'none';
 }
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSubmitSolModal(); });
-document.querySelectorAll('.sol-lang-tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-        document.querySelectorAll('.sol-lang-tab').forEach(function (t) { t.classList.remove('active'); });
-        tab.classList.add('active');
-        __selectedSolLang = tab.dataset.lang;
-    });
-});
 document.getElementById('sol_code').addEventListener('input', function () {
     document.getElementById('sol_code_counter').textContent = this.value.length + ' / __CODE_MAX__';
 });
@@ -1691,7 +1792,7 @@ def problem_user_solutions_page(id):
         my_section = '<p class="comment-empty">Log in to submit and track your own solutions.</p>'
 
     lang_sections = ""
-    for lang in ("cpp", "java", "python"):
+    for lang in ("sage",):
         rows = by_lang.get(lang, [])
         label = SOLUTION_LANG_LABELS.get(lang, lang.upper())
         lang_sections += f'<h3 class="solution-section-title">Public {label} Solutions ({len(rows)})</h3>\n'
