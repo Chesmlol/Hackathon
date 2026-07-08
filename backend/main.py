@@ -2576,6 +2576,14 @@ def blog_post_page(post_id):
     uname, dname, title, content, created_at, score, xp, admin_flag = row
     _, rank_color = get_rank_info(xp or 0, bool(admin_flag))
 
+    # Only the author can delete their own post.
+    delete_post_btn = ""
+    if u and u == uname:
+        delete_post_btn = (
+            f'<button type="button" id="delete-post-btn" class="comment-delete-btn" '
+            f'style="margin-top:0;" data-post-id="{post_id}">Delete Post</button>'
+        )
+
     with open(os.path.join(D_F, "blog_post.html"), "r", encoding="utf-8") as f:
         h = f.read()
 
@@ -2587,6 +2595,7 @@ def blog_post_page(post_id):
             .replace("{{score}}", str(score))\
             .replace("{{vote_up_active}}", " active" if user_vote == 1 else "")\
             .replace("{{vote_down_active}}", " active" if user_vote == -1 else "")\
+            .replace("{{delete_post_btn}}", delete_post_btn)\
             .replace("{{nav}}", nav_html(u))
 
 @app.route("/api/blog/create", methods=["POST"])
@@ -2734,6 +2743,25 @@ def delete_blog_comment(comment_id):
         if row[0] != u:
             return jsonify({"success": False, "msg": "You can only delete your own comments."}), 403
         c.execute("DELETE FROM blog_comments WHERE id=?", (comment_id,))
+
+    return jsonify({"success": True})
+
+@app.route("/api/blog/<int:post_id>/delete", methods=["POST"])
+def delete_blog_post(post_id):
+    u = get_u()
+    if not u:
+        return jsonify({"success": False, "msg": "Please log in."}), 401
+
+    with sqlite3.connect(DB_U) as c:
+        row = c.execute("SELECT username FROM blog_posts WHERE id=?", (post_id,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "msg": "Post not found."}), 404
+        if row[0] != u:
+            return jsonify({"success": False, "msg": "You can only delete your own posts."}), 403
+
+        c.execute("DELETE FROM blog_comments WHERE post_id=?", (post_id,))
+        c.execute("DELETE FROM blog_votes WHERE post_id=?", (post_id,))
+        c.execute("DELETE FROM blog_posts WHERE id=?", (post_id,))
 
     return jsonify({"success": True})
 

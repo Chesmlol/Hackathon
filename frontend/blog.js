@@ -32,4 +32,33 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    document.body.addEventListener('click', async function (e) {
+        const btn = e.target.closest('#delete-post-btn');
+        if (!btn) return;
+
+        const postId = btn.getAttribute('data-post-id');
+        if (!confirm('Delete this post? This cannot be undone.')) return;
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/blog/${postId}/delete`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showNotification === 'function') {
+                    showNotification('Post deleted.', 'success');
+                }
+                window.location.href = '/blog';
+            } else {
+                btn.disabled = false;
+                if (typeof showNotification === 'function') {
+                    showNotification(data.msg || 'Could not delete post.', 'error');
+                }
+            }
+        } catch (err) {
+            btn.disabled = false;
+            if (typeof showNotification === 'function') {
+                showNotification('Error deleting post.', 'error');
+            }
+        }
+    });
 });
