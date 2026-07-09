@@ -3,3 +3,4 @@
 backend/*.db
 *.pyc
 .DS_Store
+.env

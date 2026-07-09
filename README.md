@@ -5,6 +5,18 @@ theme, including a built-in judge that runs SageMath submissions.
 
 ## Setup
 
+### 0. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Then fill in `.env` with real values (port, admin bootstrap secret, Sage
+settings — see comments in `.env.example`). `.env` is gitignored/
+dockerignored, so it's safe to put real secrets in it; it's loaded
+automatically by `backend/main.py` on startup, whether you run it directly
+or via Docker.
+
 ### 1. Flask app
 
 ```bash
@@ -13,7 +25,8 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Serves on http://localhost:6767.
+Serves on http://localhost:6767 by default — set `PORT` in `.env` (or the
+environment) to change it.
 
 ### 2. SageMath (required for the code judge)
 

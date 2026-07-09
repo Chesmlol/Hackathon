@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 try:
     import resource  # POSIX only; used for best-effort CPU/memory limits on judged code
 except ImportError:
@@ -17,6 +18,21 @@ D_R = os.path.dirname(D_B)
 D_F = os.path.join(D_R, "frontend")
 DB_U = os.path.join(D_B, "users.db")
 DB_C = os.path.join(D_B, "cookies.db")
+
+# Load .env from the project root regardless of cwd, so `python main.py`
+# (run from backend/, per README) and the Docker image (cwd /app, per
+# Dockerfile) both pick it up the same way. Copy .env.example -> .env and
+# fill in real values; .env itself is gitignored/dockerignored so secrets
+# never get committed or baked into an image layer. Vars already set in the
+# real environment (e.g. by docker run -e / a compose file) win, since
+# load_dotenv() defaults to not overriding existing os.environ entries.
+load_dotenv(os.path.join(D_R, ".env"))
+
+# Port the Flask dev server binds to (see app.run() at the bottom of this
+# file). Configurable via PORT in .env / the environment instead of being
+# hardcoded, so it matches whatever the surrounding infra (Docker port
+# mapping, reverse proxy, etc.) expects it to listen on.
+PORT = int(os.environ.get("PORT", 6767))
 
 def init():
     # Session-cookie store lives in a separate DB (DB_C) from the main user
@@ -51,7 +67,16 @@ def init():
         user_cols = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
         if "is_admin" not in user_cols:
             c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
-        
+
+        # Migrate: moderation columns — is_banned (account lockout) and
+        # warning_message (a pending admin message shown to the user next
+        # time they load a page; cleared once acknowledged). See
+        # enforce_account_ban() / inject_pending_alerts() below.
+        if "is_banned" not in user_cols:
+            c.execute("ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0")
+        if "warning_message" not in user_cols:
+            c.execute("ALTER TABLE users ADD COLUMN warning_message TEXT")
+
         # Create initial_misions table
         c.execute("""CREATE TABLE IF NOT EXISTS initial_misions (
             id TEXT PRIMARY KEY, 
@@ -232,6 +257,81 @@ def is_admin(u):
         r = c.execute("SELECT is_admin FROM users WHERE username=?", (u,)).fetchone()
     return bool(r and r[0])
 
+def is_banned(u):
+    if not u:
+        return False
+    with sqlite3.connect(DB_U) as c:
+        r = c.execute("SELECT is_banned FROM users WHERE username=?", (u,)).fetchone()
+    return bool(r and r[0])
+
+def banned_page_html(u):
+    """Full-page takeover shown to a banned user for any page they try to
+    load while still holding a valid session cookie (see enforce_account_ban
+    below). Deliberately does NOT expose the account/logout nav so a banned
+    user can't casually keep browsing - the only way forward is Log Out."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Banned - ChanceField</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+    <h1>ChanceField</h1>
+    <p>&gt; ACCESS DENIED</p>
+</header>
+<main>
+    <section class="window" style="max-width:600px; margin:100px auto; text-align:center; border-color:#ff3030; box-shadow:0 0 24px rgba(255,48,48,0.45);">
+        <h2 style="color:#ff3030; text-shadow:0 0 10px #ff3030;">⛔ ACCOUNT BANNED</h2>
+        <p style="font-size:1.35rem; margin:22px 0;">The account <strong>{html.escape(u)}</strong> has been suspended by an administrator.</p>
+        <p style="opacity:0.8; margin-bottom:26px;">You can no longer use this account. If you believe this is a mistake, please contact support.</p>
+        <a href="/logout" class="back-btn" style="border-color:#ff3030; color:#ff3030; text-shadow:0 0 5px #ff3030; box-shadow:0 0 5px #ff3030, inset 0 0 5px rgba(255,48,48,0.2);">Log Out</a>
+    </section>
+</main>
+</body>
+</html>"""
+
+def build_warning_popup_html(message):
+    """Big, centered, unmissable modal shown to a user with a pending admin
+    warning - injected into every HTML page they load (see
+    inject_pending_alerts below) until they click 'I UNDERSTAND', which
+    clears warning_message server-side via /api/warning/ack."""
+    safe_msg = html.escape(message)
+    return f'''
+<div id="cf-warning-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:99998;"></div>
+<div id="cf-warning-modal" role="alertdialog" aria-modal="true" aria-labelledby="cf-warning-title"
+     style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:99999;
+            width:min(560px, 90vw); background:#000; border:3px solid #ffcc00;
+            box-shadow:0 0 40px rgba(255,204,0,0.6); padding:36px; text-align:center;
+            font-family:'VT323', monospace;">
+    <div style="font-size:3rem; margin-bottom:10px;">⚠</div>
+    <h2 id="cf-warning-title" style="color:#ffcc00; text-shadow:0 0 10px #ffcc00; font-size:2rem; margin-bottom:18px; letter-spacing:2px;">
+        ADMIN WARNING
+    </h2>
+    <p style="color:#fff; font-size:1.3rem; line-height:1.5; white-space:pre-wrap; word-break:break-word; margin-bottom:26px;">{safe_msg}</p>
+    <button type="button" onclick="cfAckWarning()"
+            style="background:#ffcc00; color:#000; border:2px solid #ffcc00; padding:14px 32px;
+                   font-size:1.3rem; font-family:inherit; cursor:pointer; font-weight:bold;">
+        I UNDERSTAND
+    </button>
+</div>
+<script>
+(function () {{
+    document.body.style.overflow = 'hidden';
+    window.cfAckWarning = function () {{
+        fetch('/api/warning/ack', {{ method: 'POST' }}).catch(function () {{}});
+        var m = document.getElementById('cf-warning-modal');
+        var b = document.getElementById('cf-warning-backdrop');
+        if (m) m.remove();
+        if (b) b.remove();
+        document.body.style.overflow = '';
+    }};
+}})();
+</script>
+'''
+
 # ── Rank system ──
 # Ordered ascending by xp threshold. To retune progression later, just edit
 # this list — add, remove, rename, or re-threshold tiers; get_rank_info()
@@ -410,6 +510,64 @@ def nav_html(u):
     {nav_right}
     </div>'''
 
+# ── Ban enforcement + pending-warning delivery ──
+# Runs on every request/response, site-wide, so no individual route has to
+# remember to check these itself.
+BAN_EXEMPT_PATHS = {"/logout"}
+STATIC_EXTS = (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
+               ".mp4", ".pdf", ".woff", ".woff2", ".map")
+
+@app.before_request
+def enforce_account_ban():
+    """A banned user keeps their session (so they see the ban message rather
+    than just silently landing on a login screen) but every page they
+    request — other than static assets and /logout — is replaced with a
+    full-page 'ACCOUNT BANNED' notice. API calls get a plain 403 instead of
+    banned_page_html since they're consumed by JS, not rendered."""
+    u = get_u()
+    if not u or not is_banned(u):
+        return None
+    path = request.path
+    if path in BAN_EXEMPT_PATHS:
+        return None
+    if path.lower().endswith(STATIC_EXTS):
+        return None
+    if path.startswith("/api/"):
+        return jsonify({"success": False, "msg": "Your account has been banned."}), 403
+    return banned_page_html(u), 403
+
+@app.after_request
+def inject_pending_alerts(resp):
+    """If the logged-in viewer has a pending admin warning_message, injects
+    the big centered warning modal (build_warning_popup_html) into every
+    HTML page right before </body>. It stays showing on every page until
+    the user clicks 'I UNDERSTAND', which POSTs /api/warning/ack to clear
+    it — so it's guaranteed to be seen even if they close the tab first."""
+    try:
+        ctype = resp.content_type or ""
+        if ctype.startswith("text/html"):
+            u = get_u()
+            if u:
+                with sqlite3.connect(DB_U) as c:
+                    row = c.execute("SELECT warning_message FROM users WHERE username=?", (u,)).fetchone()
+                if row and row[0]:
+                    body = resp.get_data(as_text=True)
+                    if "</body>" in body:
+                        body = body.replace("</body>", build_warning_popup_html(row[0]) + "</body>", 1)
+                        resp.set_data(body)
+    except Exception:
+        pass
+    return resp
+
+@app.route("/api/warning/ack", methods=["POST"])
+def ack_warning():
+    u = get_u()
+    if not u:
+        return jsonify({"success": False, "msg": "Login required."}), 401
+    with sqlite3.connect(DB_U) as c:
+        c.execute("UPDATE users SET warning_message=NULL WHERE username=?", (u,))
+    return jsonify({"success": True})
+
 def build_pagination(current, total_pages, url_for_page):
     """Renders a page-number strip (\u00ab Prev  1 \u2026 4 [5] 6 \u2026 12  Next \u00bb  Page 5 of 12)
     shared by /learn, /practice, and /ranking. url_for_page(n) must return the
@@ -522,21 +680,132 @@ def handle_register():
 SETTINGS_BTN_RE = re.compile(r"<!-- SETTINGS_BTN_START -->.*?<!-- SETTINGS_BTN_END -->", re.DOTALL)
 SETTINGS_MODAL_RE = re.compile(r"<!-- SETTINGS_MODAL_START -->.*?<!-- SETTINGS_MODAL_END -->", re.DOTALL)
 
+def build_admin_actions_html(target_username, is_banned_flag, pending_warning):
+    """Ban + Warn controls shown to an admin viewing someone else's profile.
+    Kept as plain inline styles (matching the rest of the file's approach)
+    rather than new CSS classes, so this drops in without touching style.css.
+    Ban toggles instantly; Warn opens a modal where the admin types free text
+    that gets shown to the user as a big popup next time they load a page
+    (see build_warning_popup_html / inject_pending_alerts in main.py)."""
+    ban_label = "Unban User" if is_banned_flag else "Ban User"
+    ban_action = "unban" if is_banned_flag else "ban"
+    ban_icon = "\U0001F513" if is_banned_flag else "\U0001F6AB"
+
+    banned_badge = ""
+    if is_banned_flag:
+        banned_badge = ('<p style="color:#ff3030; font-weight:bold; text-shadow:0 0 6px #ff3030; '
+                        'margin-top:10px;">\u26D4 THIS ACCOUNT IS CURRENTLY BANNED</p>')
+
+    pending_note = ""
+    if pending_warning:
+        pending_note = (
+            '<div style="margin-top:10px; padding:10px 12px; border:1px solid #ffcc00; '
+            'background:rgba(255,204,0,0.06); font-size:0.95rem;">'
+            '<strong style="color:#ffcc00;">\u23F3 Unacknowledged warning pending:</strong> '
+            f'<span style="opacity:0.85;">{html.escape(pending_warning)}</span><br>'
+            f'<button type="button" class="back-btn" style="margin-top:8px; padding:6px 16px; '
+            'font-size:0.9rem; border-color:#ffcc00; color:#ffcc00;" '
+            f'onclick="clearPendingWarning()">Clear Warning</button>'
+            '</div>'
+        )
+
+    return f'''
+    {banned_badge}
+    {pending_note}
+    <div class="admin-actions-row" style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="back-btn" style="flex:1; border-color:#ffcc00; color:#ffcc00; text-shadow:0 0 5px #ffcc00; box-shadow:0 0 5px #ffcc00, inset 0 0 5px rgba(255,204,0,0.2);" onclick="openWarnModal()">\u26A0 Warn User</button>
+        <button type="button" id="admin-ban-btn" class="back-btn" style="flex:1; border-color:#ff3030; color:#ff3030; text-shadow:0 0 5px #ff3030; box-shadow:0 0 5px #ff3030, inset 0 0 5px rgba(255,48,48,0.2);" data-action="{ban_action}" onclick="toggleBan(this)">{ban_icon} {ban_label}</button>
+    </div>
+
+    <div id="warn-backdrop" class="modal-backdrop" style="display:none;" onclick="closeWarnModal()"></div>
+    <div id="warn-modal" class="window modal-window" role="dialog" aria-modal="true" aria-labelledby="warn-title"
+         style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:500px; background:#000; z-index:1000; padding:30px; border:2px solid #ffcc00; box-shadow:0 0 20px rgba(255,204,0,0.4);">
+        <h3 id="warn-title" style="color:#ffcc00; text-shadow:0 0 6px #ffcc00;">\u26A0 Send Warning to {target_username}</h3>
+        <label for="warn_text">Warning message (shown as a popup on their next page load):</label>
+        <textarea id="warn_text" class="comment-input" rows="4" maxlength="1000" placeholder="Type the warning message this user will see..." style="width:100%; margin:8px 0 14px;"></textarea>
+        <div style="display:flex; gap:10px;">
+            <button type="button" class="back-btn" style="flex:1; border-color:#ffcc00; color:#ffcc00;" onclick="sendWarning()">Send Warning</button>
+            <button type="button" class="back-btn" style="flex:1; background:#333;" onclick="closeWarnModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+    function openWarnModal() {{
+        document.getElementById('warn-modal').style.display = 'block';
+        document.getElementById('warn-backdrop').style.display = 'block';
+        document.getElementById('warn_text').focus();
+    }}
+    function closeWarnModal() {{
+        document.getElementById('warn-modal').style.display = 'none';
+        document.getElementById('warn-backdrop').style.display = 'none';
+    }}
+    document.addEventListener('keydown', function (e) {{ if (e.key === 'Escape') closeWarnModal(); }});
+
+    async function sendWarning() {{
+        const msg = document.getElementById('warn_text').value.trim();
+        if (!msg) {{ showNotification('Please type a warning message.', 'error'); return; }}
+        try {{
+            const res = await fetch('/api/admin/users/{target_username}/warn', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify({{ message: msg }})
+            }});
+            const data = await res.json();
+            showNotification(data.msg, data.success ? 'success' : 'error');
+            if (data.success) {{ closeWarnModal(); setTimeout(function () {{ location.reload(); }}, 700); }}
+        }} catch (e) {{
+            showNotification('Error sending warning.', 'error');
+        }}
+    }}
+
+    async function clearPendingWarning() {{
+        try {{
+            const res = await fetch('/api/admin/users/{target_username}/clear_warning', {{ method: 'POST' }});
+            const data = await res.json();
+            showNotification(data.msg, data.success ? 'success' : 'error');
+            if (data.success) setTimeout(function () {{ location.reload(); }}, 500);
+        }} catch (e) {{
+            showNotification('Error clearing warning.', 'error');
+        }}
+    }}
+
+    async function toggleBan(btn) {{
+        const action = btn.dataset.action;
+        const confirmMsg = action === 'ban'
+            ? 'Ban this user? Their account will become unusable until unbanned.'
+            : 'Unban this user?';
+        if (!confirm(confirmMsg)) return;
+        try {{
+            const res = await fetch('/api/admin/users/{target_username}/ban', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify({{ action: action }})
+            }});
+            const data = await res.json();
+            showNotification(data.msg, data.success ? 'success' : 'error');
+            if (data.success) setTimeout(function () {{ location.reload(); }}, 700);
+        }} catch (e) {{
+            showNotification('Error updating ban status.', 'error');
+        }}
+    }}
+    </script>
+    '''
+
 def render_profile_page(target_username, viewer_username, show_settings, tab="submissions", page=1):
     """Builds account.html for `target_username`. Used both for a user's own
     editable account page (show_settings=True) and for anyone's read-only
     public profile at /user/<username> (show_settings=False). Returns None
     if target_username doesn't exist."""
     with sqlite3.connect(DB_U) as c: 
-        # ADDED avatar_url AND is_admin TO THIS SELECT
-        r = c.execute("SELECT level, rank, global_position, progress, xp, display_name, avatar_url, is_admin FROM users WHERE username=?", (target_username,)).fetchone()
+        # ADDED avatar_url, is_admin, is_banned, warning_message TO THIS SELECT
+        r = c.execute("SELECT level, rank, global_position, progress, xp, display_name, avatar_url, is_admin, is_banned, warning_message FROM users WHERE username=?", (target_username,)).fetchone()
         if not r:
             return None
         
-        # Unpack all 8 variables
+        # Unpack all 10 variables
         # Fallback to default avatar if none exists
         default_av = 'https://thumbs.dreamstime.com/b/binary-code-matrix-background-digital-technology-vector-computer-data-green-numbers-pattern-streams-zero-one-digits-182437658.jpg'
-        l, rnk, gp, pr, xp, dname, av, admin_flag = r
+        l, rnk, gp, pr, xp, dname, av, admin_flag, banned_flag, pending_warning = r
         # NOTE: `rnk` above is the legacy DB rank column — no longer displayed
         # directly. The actual rank shown to the user is computed live from
         # xp (and is_admin) via get_rank_info() below, so it can't drift out
@@ -595,6 +864,13 @@ def render_profile_page(target_username, viewer_username, show_settings, tab="su
             </table>
         </div>'''
 
+    # Admin-only moderation controls (Ban / Warn) shown on someone else's
+    # profile — never on an admin's own account and never on another admin's
+    # profile, per the "except for the admin account" rule.
+    admin_actions_html = ""
+    if viewer_username and is_admin(viewer_username) and not bool(admin_flag):
+        admin_actions_html = build_admin_actions_html(target_username, bool(banned_flag), pending_warning)
+
     with open(os.path.join(D_F, "account.html"), "r", encoding="utf-8") as f: 
         h = f.read()
 
@@ -612,6 +888,7 @@ def render_profile_page(target_username, viewer_username, show_settings, tab="su
             .replace("{{pr}}", str(pr))\
             .replace("{{tab_bar}}", tab_bar)\
             .replace("{{r_sec_content}}", r_sec_content)\
+            .replace("{{admin_actions}}", admin_actions_html)\
             .replace("{{overall_pct}}", str(overall_pct))\
             .replace("{{overall_solved}}", str(ps))\
             .replace("{{overall_total}}", str(total_problems))\
@@ -2269,6 +2546,61 @@ def admin_resolve_report(comment_id):
 
     return jsonify({"success": True})
 
+# ── Admin: per-user ban / warn (buttons on /user/<username>) ──
+@app.route("/api/admin/users/<username>/ban", methods=["POST"])
+def admin_toggle_ban(username):
+    u = get_u()
+    if not u or not is_admin(u):
+        return jsonify({"success": False, "msg": "Admin access required."}), 403
+
+    data = request.json or {}
+    action = data.get("action")
+    if action not in ("ban", "unban"):
+        return jsonify({"success": False, "msg": "Invalid action."}), 400
+
+    with sqlite3.connect(DB_U) as c:
+        row = c.execute("SELECT is_admin FROM users WHERE username=?", (username,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "msg": "User not found."}), 404
+        if row[0]:
+            return jsonify({"success": False, "msg": "Admin accounts can't be banned."}), 400
+        c.execute("UPDATE users SET is_banned=? WHERE username=?", (1 if action == "ban" else 0, username))
+
+    msg = f"{username} has been banned." if action == "ban" else f"{username} has been unbanned."
+    return jsonify({"success": True, "msg": msg})
+
+@app.route("/api/admin/users/<username>/warn", methods=["POST"])
+def admin_warn_user(username):
+    u = get_u()
+    if not u or not is_admin(u):
+        return jsonify({"success": False, "msg": "Admin access required."}), 403
+
+    data = request.json or {}
+    message = (data.get("message") or "").strip()
+    if not message:
+        return jsonify({"success": False, "msg": "Warning message can't be empty."}), 400
+    if len(message) > 1000:
+        return jsonify({"success": False, "msg": "Warning message is limited to 1000 characters."}), 400
+
+    with sqlite3.connect(DB_U) as c:
+        row = c.execute("SELECT is_admin FROM users WHERE username=?", (username,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "msg": "User not found."}), 404
+        if row[0]:
+            return jsonify({"success": False, "msg": "Admin accounts can't be warned."}), 400
+        c.execute("UPDATE users SET warning_message=? WHERE username=?", (message, username))
+
+    return jsonify({"success": True, "msg": f"Warning sent to {username} — they'll see it on their next page load."})
+
+@app.route("/api/admin/users/<username>/clear_warning", methods=["POST"])
+def admin_clear_warning(username):
+    u = get_u()
+    if not u or not is_admin(u):
+        return jsonify({"success": False, "msg": "Admin access required."}), 403
+    with sqlite3.connect(DB_U) as c:
+        c.execute("UPDATE users SET warning_message=NULL WHERE username=?", (username,))
+    return jsonify({"success": True, "msg": "Warning cleared."})
+
 #DELETE TS BELOW WHEN LAUNCHING THE WEB
 
 @app.route("/api/admin/promote", methods=["POST"])
@@ -2801,4 +3133,4 @@ def out():
 
 if __name__ == "__main__":
     init()
-    app.run(host="0.0.0.0", port=6767, debug=True)
+    app.run(host="0.0.0.0", port=PORT, debug=True)

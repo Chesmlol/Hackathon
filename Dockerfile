@@ -24,5 +24,10 @@ COPY . .
 # image already. Uncomment and adjust if the image puts it somewhere else:
 # ENV SAGE_BINARY=/home/sage/sage/sage
 
-EXPOSE 6767
+# Default port main.py listens on (see PORT handling in backend/main.py).
+# Override at run time with `docker run -e PORT=... -p ...:...` if you need
+# something other than 6767; EXPOSE below tracks whatever PORT resolves to
+# at build time so the image's declared port stays honest.
+ENV PORT=6767
+EXPOSE $PORT
 CMD ["sage", "-python", "backend/main.py"]
