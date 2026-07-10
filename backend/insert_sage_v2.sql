@@ -1,0 +1,442 @@
+-- 20 bai SageMath, cham theo ham voi 5 testcase moi bai (moi testcase dung = 20/100 diem)
+-- INSERT OR REPLACE theo id nen chay lai an toan.
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_multiset_no_adj', 'Multiset Permutations, No Equal Letters Adjacent', 100, '', '<p>A word contains a copies of A, b copies of B, and c copies of C. Count the distinct permutations of the word in which no two equal letters are adjacent.</p><div class="io-box"><strong>Function:</strong> <code>count_no_adjacent(a, b, c)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>count_no_adjacent(2, 1, 1)</code> &nbsp;=&nbsp; <code>6</code></div><p>Implement <code>count_no_adjacent</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def count_no_adjacent(a, b, c):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (2, 1, 1),
+    (3, 2, 1),
+    (2, 2, 2),
+    (4, 3, 2),
+    (5, 4, 3),
+]
+__expected = [''6'', ''10'', ''30'', ''79'', ''588'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(count_no_adjacent(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_circular_arrangements', 'Circular Arrangements (up to Rotation)', 100, '', '<p>Given n distinct objects, count the distinct circular arrangements, where arrangements differing only by rotation are considered the same.</p><div class="io-box"><strong>Function:</strong> <code>circular_arrangements(n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>circular_arrangements(7)</code> &nbsp;=&nbsp; <code>720</code></div><p>Implement <code>circular_arrangements</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def circular_arrangements(n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (7,),
+    (8,),
+    (10,),
+    (12,),
+    (15,),
+]
+__expected = [''720'', ''5040'', ''362880'', ''39916800'', ''87178291200'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(circular_arrangements(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_circular_not_adjacent', 'Circular Arrangements with a Forbidden Adjacency', 100, '', '<p>Given n distinct objects arranged on a circle (up to rotation), count the circular arrangements in which two particular distinguished objects are NOT adjacent.</p><div class="io-box"><strong>Function:</strong> <code>circular_not_adjacent(n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>circular_not_adjacent(6)</code> &nbsp;=&nbsp; <code>72</code></div><p>Implement <code>circular_not_adjacent</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def circular_not_adjacent(n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (6,),
+    (7,),
+    (9,),
+    (10,),
+    (12,),
+]
+__expected = [''72'', ''480'', ''30240'', ''282240'', ''32659200'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(circular_not_adjacent(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_multinomial_coeff', 'Multinomial Coefficient from an Expansion', 100, '', '<p>Find the coefficient of x^a y^b z^c in the expansion of (x+y+z)^n, where a+b+c = n.</p><div class="io-box"><strong>Function:</strong> <code>multinomial_coeff(n, a, b, c)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>multinomial_coeff(8, 3, 2, 3)</code> &nbsp;=&nbsp; <code>560</code></div><p>Implement <code>multinomial_coeff</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def multinomial_coeff(n, a, b, c):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (8, 3, 2, 3),
+    (10, 4, 3, 3),
+    (12, 5, 4, 3),
+    (15, 5, 4, 6),
+    (20, 8, 6, 6),
+]
+__expected = [''560'', ''4200'', ''27720'', ''630630'', ''116396280'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(multinomial_coeff(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_bounded_stars_bars', 'Bounded Stars and Bars', 100, '', '<p>Count the nonnegative integer solutions to x1 + x2 + ... + xk = n subject to xi <= bounds[i] for every i.</p><div class="io-box"><strong>Function:</strong> <code>bounded_compositions(n, bounds)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>bounded_compositions(7, [2, 3, 4])</code> &nbsp;=&nbsp; <code>6</code></div><p>Implement <code>bounded_compositions</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def bounded_compositions(n, bounds):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (7, [2, 3, 4]),
+    (10, [3, 4, 5, 6]),
+    (12, [4, 4, 4]),
+    (8, [2, 2, 2, 2]),
+    (15, [5, 5, 5, 5]),
+]
+__expected = [''6'', ''96'', ''1'', ''1'', ''56'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(bounded_compositions(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_surjections', 'Counting Surjections', 100, '', '<p>How many surjective (onto) functions are there from an n-element set to a k-element set?</p><div class="io-box"><strong>Function:</strong> <code>surjections(n, k)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>surjections(8, 4)</code> &nbsp;=&nbsp; <code>40824</code></div><p>Implement <code>surjections</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def surjections(n, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (8, 4),
+    (10, 5),
+    (9, 3),
+    (12, 4),
+    (15, 5),
+]
+__expected = [''40824'', ''5103000'', ''18150'', ''14676024'', ''25292030400'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(surjections(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_set_partitions_k_blocks', 'Set Partitions into Exactly k Blocks', 100, '', '<p>Count the ways to partition an n-element set into exactly k nonempty, unlabeled subsets (a Stirling number of the second kind).</p><div class="io-box"><strong>Function:</strong> <code>set_partitions_exact(n, k)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>set_partitions_exact(9, 3)</code> &nbsp;=&nbsp; <code>3025</code></div><p>Implement <code>set_partitions_exact</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def set_partitions_exact(n, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (9, 3),
+    (10, 4),
+    (12, 4),
+    (15, 5),
+    (18, 6),
+]
+__expected = [''3025'', ''34105'', ''611501'', ''210766920'', ''110687251039'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(set_partitions_exact(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_bell_number', 'Bell Numbers', 100, '', '<p>Compute the Bell number Bn: the number of ways to partition an n-element set into any number of nonempty, unlabeled subsets.</p><div class="io-box"><strong>Function:</strong> <code>bell_number_sage(n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>bell_number_sage(8)</code> &nbsp;=&nbsp; <code>4140</code></div><p>Implement <code>bell_number_sage</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def bell_number_sage(n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (8,),
+    (10,),
+    (12,),
+    (15,),
+    (18,),
+]
+__expected = [''4140'', ''115975'', ''4213597'', ''1382958545'', ''682076806159'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(bell_number_sage(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_gaussian_binomial', 'Gaussian Binomial Coefficients', 100, '', '<p>Compute the number of k-dimensional subspaces of F_q^n (the Gaussian binomial coefficient).</p><div class="io-box"><strong>Function:</strong> <code>gaussian_binomial(q, n, k)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>gaussian_binomial(2, 6, 3)</code> &nbsp;=&nbsp; <code>1395</code></div><p>Implement <code>gaussian_binomial</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def gaussian_binomial(q, n, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (2, 6, 3),
+    (2, 8, 4),
+    (3, 6, 2),
+    (3, 8, 4),
+    (5, 6, 3),
+]
+__expected = [''1395'', ''200787'', ''11011'', ''75913222'', ''2558556'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(gaussian_binomial(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_derangements_r_fixed', 'Permutations with Exactly r Fixed Points', 100, '', '<p>Count the permutations of {1,...,n} that have exactly r fixed points.</p><div class="io-box"><strong>Function:</strong> <code>permutations_with_r_fixed(n, r)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>permutations_with_r_fixed(7, 2)</code> &nbsp;=&nbsp; <code>924</code></div><p>Implement <code>permutations_with_r_fixed</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def permutations_with_r_fixed(n, r):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (7, 2),
+    (8, 3),
+    (10, 3),
+    (12, 4),
+    (15, 5),
+]
+__expected = [''924'', ''2464'', ''222480'', ''7342335'', ''4008887883'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(permutations_with_r_fixed(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_poisson_binomial', 'Poisson-Binomial: Exact Probability of k Successes', 100, '', '<p>Given independent Bernoulli trials with success probabilities ps, compute the exact probability of exactly k successes, as a reduced fraction.</p><div class="io-box"><strong>Function:</strong> <code>poisson_binomial_exact(ps, k)</code> &nbsp;&rarr;&nbsp; returns an exact fraction (e.g. 1/4)</div><div class="io-box"><strong>Example:</strong> <code>poisson_binomial_exact([1/2, 1/3, 1/4], 2)</code> &nbsp;=&nbsp; <code>1/4</code></div><p>Implement <code>poisson_binomial_exact</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def poisson_binomial_exact(ps, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    ([1/2, 1/3, 1/4], 2),
+    ([1/2, 1/3, 1/4, 1/5, 1/6], 2),
+    ([1/2, 1/3, 1/4, 1/5, 1/6, 1/7], 3),
+    ([1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9], 4),
+    ([1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11], 5),
+]
+__expected = [''1/4'', ''5/16'', ''7/48'', ''1069/17280'', ''781/34560'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(poisson_binomial_exact(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_forced_nonempty_boxes', 'Onto Functions with Forced Nonempty Boxes', 100, '', '<p>Distribute n distinct balls into k distinct boxes so that every box ends up nonempty, with the first t boxes additionally required to be nonempty.</p><div class="io-box"><strong>Function:</strong> <code>onto_with_forced_boxes(n, k, t)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>onto_with_forced_boxes(6, 4, 2)</code> &nbsp;=&nbsp; <code>1560</code></div><p>Implement <code>onto_with_forced_boxes</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def onto_with_forced_boxes(n, k, t):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (6, 4, 2),
+    (8, 5, 3),
+    (10, 5, 5),
+    (12, 6, 3),
+    (15, 7, 4),
+]
+__expected = [''1560'', ''126000'', ''5103000'', ''953029440'', ''2060056318320'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(onto_with_forced_boxes(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_mixed_gen_func_coeff', 'Coefficient from a Mixed Generating Function', 100, '', '<p>Find the coefficient of x^a y^b in (1 + x + x^2)^m * (1+y)^n.</p><div class="io-box"><strong>Function:</strong> <code>mixed_coeff(m, n, a, b)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>mixed_coeff(4, 5, 3, 2)</code> &nbsp;=&nbsp; <code>160</code></div><p>Implement <code>mixed_coeff</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def mixed_coeff(m, n, a, b):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (4, 5, 3, 2),
+    (5, 6, 4, 2),
+    (6, 8, 5, 3),
+    (8, 9, 5, 4),
+    (10, 10, 6, 5),
+]
+__expected = [''160'', ''675'', ''7056'', ''63504'', ''718200'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(mixed_coeff(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_ordered_bell', 'Ordered Bell (Fubini) Numbers', 100, '', '<p>Count the number of ordered set partitions of an n-element set (the ordered Bell / Fubini number).</p><div class="io-box"><strong>Function:</strong> <code>ordered_bell(n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>ordered_bell(5)</code> &nbsp;=&nbsp; <code>541</code></div><p>Implement <code>ordered_bell</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def ordered_bell(n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (5,),
+    (6,),
+    (8,),
+    (10,),
+    (12,),
+]
+__expected = [''541'', ''4683'', ''545835'', ''102247563'', ''28091567595'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(ordered_bell(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_exactly_r_distinct', 'Exactly r Distinct Values Among n Draws', 100, '', '<p>An urn contains m labeled colors. Draw n balls independently with replacement. Count the sequences in which exactly r distinct colors appear.</p><div class="io-box"><strong>Function:</strong> <code>exactly_r_distinct(m, n, r)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>exactly_r_distinct(4, 5, 3)</code> &nbsp;=&nbsp; <code>600</code></div><p>Implement <code>exactly_r_distinct</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def exactly_r_distinct(m, n, r):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (4, 5, 3),
+    (5, 8, 4),
+    (8, 10, 5),
+    (10, 12, 6),
+    (12, 15, 7),
+]
+__expected = [''600'', ''204120'', ''285768000'', ''200136182400'', ''1631564604109440'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(exactly_r_distinct(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_restricted_compositions', 'Restricted Compositions via Generating Functions', 100, '', '<p>Count the integer solutions to x1 + ... + xk = n where each xi must belong to a prescribed finite set (sets[i]).</p><div class="io-box"><strong>Function:</strong> <code>restricted_compositions(sets, n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>restricted_compositions([[0, 1], [1, 2], [0, 2]], 3)</code> &nbsp;=&nbsp; <code>2</code></div><p>Implement <code>restricted_compositions</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def restricted_compositions(sets, n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    ([[0, 1], [1, 2], [0, 2]], 3),
+    ([[0, 1], [1, 2], [0, 2], [0, 1, 2]], 5),
+    ([[0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2]], 7),
+    ([[0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2]], 8),
+    ([[0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2]], 10),
+]
+__expected = [''2'', ''5'', ''4'', ''15'', ''21'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(restricted_compositions(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_perms_c_cycles', 'Permutations with a Given Number of Cycles', 100, '', '<p>Count the permutations of n elements that have exactly c cycles (an unsigned Stirling number of the first kind).</p><div class="io-box"><strong>Function:</strong> <code>permutations_with_c_cycles(n, c)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>permutations_with_c_cycles(6, 2)</code> &nbsp;=&nbsp; <code>274</code></div><p>Implement <code>permutations_with_c_cycles</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def permutations_with_c_cycles(n, c):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (6, 2),
+    (8, 3),
+    (10, 4),
+    (12, 5),
+    (15, 6),
+]
+__expected = [''274'', ''13132'', ''723680'', ''45995730'', ''56663366760'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(permutations_with_c_cycles(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_binomial_tail', 'Binomial Tail Probability (Symbolic)', 100, '', '<p>Let X ~ Binomial(n, p). Compute Pr[X >= k] exactly as a reduced fraction.</p><div class="io-box"><strong>Function:</strong> <code>binom_tail(n, p, k)</code> &nbsp;&rarr;&nbsp; returns an exact fraction (e.g. 5/16)</div><div class="io-box"><strong>Example:</strong> <code>binom_tail(5, 1/2, 3)</code> &nbsp;=&nbsp; <code>1/2</code></div><p>Implement <code>binom_tail</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def binom_tail(n, p, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (5, 1/2, 3),
+    (8, 1/2, 4),
+    (10, 1/2, 6),
+    (12, 1/3, 5),
+    (15, 2/5, 8),
+]
+__expected = [''1/2'', ''163/256'', ''193/512'', ''65275/177147'', ''6503393024/30517578125'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(binom_tail(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_binary_necklaces', 'Binary Necklaces (Burnside''s Lemma)', 100, '', '<p>Count the binary necklaces of length n up to rotation (Burnside''s lemma).</p><div class="io-box"><strong>Function:</strong> <code>binary_necklaces(n)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>binary_necklaces(8)</code> &nbsp;=&nbsp; <code>36</code></div><p>Implement <code>binary_necklaces</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def binary_necklaces(n):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (8,),
+    (10,),
+    (12,),
+    (16,),
+    (20,),
+]
+__expected = [''36'', ''108'', ''352'', ''4116'', ''52488'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(binary_necklaces(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');
+INSERT OR REPLACE INTO initial_misions (id, title, xp, answer, statement, type, test_input, starter_code, judge_harness) VALUES ('sage_necklaces_k_black', 'Binary Necklaces with a Fixed Number of Black Beads', 100, '', '<p>Count the binary necklaces of length n with exactly k black beads, up to rotation.</p><div class="io-box"><strong>Function:</strong> <code>binary_necklaces_with_k_black(n, k)</code> &nbsp;&rarr;&nbsp; returns an integer</div><div class="io-box"><strong>Example:</strong> <code>binary_necklaces_with_k_black(10, 3)</code> &nbsp;=&nbsp; <code>12</code></div><p>Implement <code>binary_necklaces_with_k_black</code> exactly as described. Your code will be run, then this function will be called on 5 hidden testcases; each correct result is worth 20 points (100 points total).</p>', 'code', '', 'def binary_necklaces_with_k_black(n, k):
+    # Write your solution here
+    pass
+', '__testcases = [
+    (10, 3),
+    (12, 4),
+    (15, 5),
+    (18, 6),
+    (20, 8),
+]
+__expected = [''12'', ''43'', ''201'', ''1038'', ''6310'']
+__score = 0
+for __i, __args in enumerate(__testcases):
+    try:
+        __r = str(binary_necklaces_with_k_black(*__args))
+    except Exception as __e:
+        __r = ''ERROR: '' + str(__e)
+    __ok = (__r == __expected[__i])
+    if __ok:
+        __score += 20
+    print(''Test '' + str(__i+1) + '': '' + (''PASS'' if __ok else ''FAIL''))
+print(''JUDGE_SCORE='' + str(__score))');

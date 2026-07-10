@@ -108,7 +108,36 @@ def init():
             c.execute("ALTER TABLE initial_misions ADD COLUMN official_solution TEXT")
         if "official_solution_lang" not in prob_cols2:
             c.execute("ALTER TABLE initial_misions ADD COLUMN official_solution_lang TEXT DEFAULT 'sage'")
-        
+
+        # Migrate: function-based multi-testcase judging (used by 'code' problems
+        # that grade a specific function against several hidden testcases instead
+        # of a single stdin/stdout pair).
+        #   starter_code   — pre-filled into the code editor for this problem
+        #                    (e.g. the exact function signature to implement).
+        #   judge_harness  — Sage source appended after the student's submission;
+        #                    it calls the required function on each testcase,
+        #                    prints "Test i: PASS/FAIL" per case, and a final
+        #                    "JUDGE_SCORE=NN" line (NN = 0,20,...,100) that
+        #                    submit_code() parses for partial-credit grading.
+        #                    When empty, submit_code() falls back to the legacy
+        #                    single test_input/answer stdin check.
+        prob_cols3 = {row[1] for row in c.execute("PRAGMA table_info(initial_misions)").fetchall()}
+        if "starter_code" not in prob_cols3:
+            c.execute("ALTER TABLE initial_misions ADD COLUMN starter_code TEXT DEFAULT ''")
+        if "judge_harness" not in prob_cols3:
+            c.execute("ALTER TABLE initial_misions ADD COLUMN judge_harness TEXT DEFAULT ''")
+
+        # Best score (0-100) per user per problem, for partial-credit problems
+        # judged via judge_harness. XP is only awarded for the *improvement*
+        # over the previously recorded best score, so re-submitting the same
+        # or a worse solution can't farm XP repeatedly.
+        c.execute("""CREATE TABLE IF NOT EXISTS problem_scores (
+            username TEXT,
+            problem_id TEXT,
+            score INTEGER DEFAULT 0,
+            PRIMARY KEY (username, problem_id)
+        )""")
+
         # Create solved_problems table (This was missing!)
         c.execute("""CREATE TABLE IF NOT EXISTS solved_problems (
             username TEXT, 
@@ -1457,17 +1486,80 @@ def submit_code():
         return jsonify({"success": False, "msg": f"Code is limited to {CODE_MAX_LEN} characters."}), 400
 
     with sqlite3.connect(DB_U) as c:
-        m = c.execute("SELECT answer, xp, type, test_input FROM initial_misions WHERE id=?", (prob_id,)).fetchone()
+        m = c.execute(
+            "SELECT answer, xp, type, test_input, judge_harness FROM initial_misions WHERE id=?",
+            (prob_id,)
+        ).fetchone()
         if not m:
             return jsonify({"success": False, "msg": "Problem not found."}), 404
         if (m[2] or "answer").lower() != "code":
             return jsonify({"success": False, "msg": "This problem doesn't accept code submissions."}), 400
 
-        expected_output, xp_reward, _, test_input = m
-        already_solved = bool(c.execute(
-            "SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, prob_id)
-        ).fetchone())
+        expected_output, xp_reward, _, test_input, judge_harness = m
 
+        if judge_harness:
+            prev_score_row = c.execute(
+                "SELECT score FROM problem_scores WHERE username=? AND problem_id=?", (u, prob_id)
+            ).fetchone()
+            prev_score = prev_score_row[0] if prev_score_row else 0
+        else:
+            already_solved = bool(c.execute(
+                "SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, prob_id)
+            ).fetchone())
+
+    # ── Multi-testcase, function-based grading (judge_harness set) ──
+    # The harness is Sage source appended after the student's code; it calls
+    # the required function on several hidden testcases, prints "Test i:
+    # PASS/FAIL" per case for visibility, and a final "JUDGE_SCORE=NN" line
+    # (NN in {0,20,40,60,80,100}) that's parsed below for partial-credit XP.
+    if judge_harness:
+        full_code = code + "\n\n" + judge_harness
+        verdict, stdout, stderr = run_code_submission(language, full_code, "")
+
+        if verdict == "internal_error":
+            return jsonify({"success": False, "msg": stderr or "Internal judge error."}), 500
+        if verdict == "compile_error":
+            return jsonify({"success": True, "verdict": "compile_error", "msg": "Compile Error.", "stdout": "", "stderr": stderr, "score": 0})
+        if verdict == "runtime_error":
+            return jsonify({"success": True, "verdict": "runtime_error", "msg": "Runtime Error.", "stdout": stdout, "stderr": stderr, "score": 0})
+        if verdict == "time_limit_exceeded":
+            return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": f"Time Limit Exceeded ({SAGE_TIME_LIMIT}s).", "stdout": "", "stderr": "", "score": 0})
+
+        # verdict == "ok" -> parse the JUDGE_SCORE=NN line the harness printed
+        score = 0
+        for line in stdout.splitlines():
+            line = line.strip()
+            if line.startswith("JUDGE_SCORE="):
+                try:
+                    score = int(line.split("=", 1)[1].strip())
+                except ValueError:
+                    score = 0
+                break
+        score = max(0, min(100, score))
+
+        delta_xp = max(0, score - prev_score)
+        if delta_xp > 0:
+            with sqlite3.connect(DB_U) as c:
+                c.execute("UPDATE users SET xp = xp + ? WHERE username=?", (delta_xp, u))
+                c.execute(
+                    "INSERT INTO problem_scores (username, problem_id, score) VALUES (?, ?, ?) "
+                    "ON CONFLICT(username, problem_id) DO UPDATE SET score=excluded.score",
+                    (u, prob_id, score)
+                )
+                if score == 100 and prev_score < 100:
+                    c.execute("INSERT OR IGNORE INTO solved_problems (username, problem_id) VALUES (?, ?)", (u, prob_id))
+                    c.execute("UPDATE users SET problems_solved = problems_solved + 1 WHERE username=?", (u,))
+
+        if score == 100:
+            msg = "Accepted! All 5 testcases passed." if delta_xp == 0 else f"Accepted! +{delta_xp} XP earned."
+            return jsonify({"success": True, "verdict": "accepted", "msg": msg, "stdout": stdout, "stderr": stderr, "score": score})
+        elif score > 0:
+            msg = f"Partial credit: {score}/100." if delta_xp == 0 else f"Partial credit: {score}/100 (+{delta_xp} XP)."
+            return jsonify({"success": True, "verdict": "partial", "msg": msg, "stdout": stdout, "stderr": stderr, "score": score})
+        else:
+            return jsonify({"success": True, "verdict": "wrong_answer", "msg": "Wrong Answer — 0/100.", "stdout": stdout, "stderr": stderr, "score": 0})
+
+    # ── Legacy path: single stdin/stdout test_input + answer, binary pass/fail ──
     verdict, stdout, stderr = run_code_submission(language, code, test_input or "")
 
     if verdict == "internal_error":
@@ -1763,7 +1855,7 @@ def problem_page(id):
     
     with sqlite3.connect(DB_U) as c:
         # 1. Fetch Problem
-        m = c.execute("SELECT title, xp, statement, type FROM initial_misions WHERE id=?", (id,)).fetchone()
+        m = c.execute("SELECT title, xp, statement, type, starter_code FROM initial_misions WHERE id=?", (id,)).fetchone()
         if not m: return "404", 404
         
         # 2. Fetch User Data (Display Name & Avatar)
@@ -1812,6 +1904,12 @@ def problem_page(id):
     with open(os.path.join(D_F, template_name), "r", encoding="utf-8") as f:
         h = f.read()
 
+    # Per-problem starter code for the Sage editor (code-type only). Falls back
+    # to a generic stub if the problem has none set. json.dumps produces a
+    # properly-escaped JS string literal (handles quotes/newlines safely).
+    starter_code = m[4] or "# Write your SageMath solution here\n\ndef main():\n    pass\n\nmain()\n"
+    starter_code_js = json.dumps(starter_code)
+
     return h.replace("{{id}}", str(id))\
             .replace("{{u}}", str(dname))\
             .replace("{{avatar}}", str(av))\
@@ -1820,6 +1918,7 @@ def problem_page(id):
             .replace("{{stmt}}", str(m[2]))\
             .replace("{{type}}", type_display)\
             .replace("{{status}}", status_msg)\
+            .replace("{{starter_code_js}}", starter_code_js)\
             .replace("{{nav}}", nav_html(u))
 
 DEFAULT_AVATAR = "https://thumbs.dreamstime.com/b/binary-code-matrix-background-digital-technology-vector-computer-data-green-numbers-pattern-streams-zero-one-digits-182437658.jpg"

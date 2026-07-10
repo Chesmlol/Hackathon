@@ -6,6 +6,48 @@
     <title>{{t}}</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/judge.css">
+    <style>
+        /* Partial-credit verdict state (judge.css only defines accepted/wrong_answer/etc.) */
+        .judge-verdict-partial {
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+            background: rgba(255, 204, 0, 0.08);
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        /* Problem statement layout: INPUT / OUTPUT headers + Sample I/O table,
+           in the classic OJ statement style. */
+        .oj-stmt h3 {
+            color: #00ff66;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 18px 0 6px;
+            font-size: 1.05em;
+        }
+        .io-sample-table {
+            border-collapse: collapse;
+            margin: 14px 0;
+            width: 100%;
+            max-width: 480px;
+            font-family: monospace;
+        }
+        .io-sample-table th, .io-sample-table td {
+            border: 1px solid #00ff66;
+            padding: 8px 14px;
+            text-align: left;
+        }
+        .io-sample-table th {
+            background: rgba(0, 255, 102, 0.08);
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+        .io-sample-table td {
+            white-space: pre-line;
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
     <script src="/notify.js"></script>
@@ -105,7 +147,7 @@
     (function () {
         const problemId = document.getElementById('comments-section').dataset.problemId;
 
-        const SAGE_TEMPLATE = "# Write your SageMath solution here\n# The Sage preparser is active (e.g. 2^10 means exponentiation,\n# and integer literals are Sage Integers by default).\n\ndef main():\n    pass\n\nmain()\n";
+        const SAGE_TEMPLATE = {{starter_code_js}};
 
         const resetBtn = document.getElementById('reset-template-btn');
         const runBtn = document.getElementById('run-btn');
@@ -143,8 +185,9 @@
         });
 
         const VERDICT_LABELS = {
-            accepted: '✅ Accepted',
-            wrong_answer: '❌ Wrong Answer',
+            accepted: '✅ Accepted — 100/100',
+            partial: '🟡 Partial Credit',
+            wrong_answer: '❌ Wrong Answer — 0/100',
             compile_error: '⚠ Compile Error',
             runtime_error: '⚠ Runtime Error',
             time_limit_exceeded: '⏱ Time Limit Exceeded'
@@ -155,24 +198,30 @@
 
             const banner = document.createElement('div');
             banner.className = 'judge-verdict judge-verdict-' + data.verdict;
-            banner.textContent = VERDICT_LABELS[data.verdict] || data.msg || 'Unknown result';
+            let label = VERDICT_LABELS[data.verdict] || data.msg || 'Unknown result';
+            // For partial-credit problems (score present and not already baked
+            // into the label above), show the exact score out of 100.
+            if (typeof data.score === 'number' && data.verdict === 'partial') {
+                label = '🟡 Partial Credit — ' + data.score + '/100';
+            }
+            banner.textContent = label;
             verdictArea.appendChild(banner);
 
             if (data.stderr) {
-                const label = document.createElement('p');
-                label.className = 'judge-output-label';
-                label.textContent = 'stderr';
-                verdictArea.appendChild(label);
+                const label2 = document.createElement('p');
+                label2.className = 'judge-output-label';
+                label2.textContent = 'stderr';
+                verdictArea.appendChild(label2);
                 const stderrBox = document.createElement('pre');
                 stderrBox.className = 'judge-output-box judge-output-stderr';
                 stderrBox.textContent = data.stderr;
                 verdictArea.appendChild(stderrBox);
             }
             if (data.stdout) {
-                const label = document.createElement('p');
-                label.className = 'judge-output-label';
-                label.textContent = 'stdout';
-                verdictArea.appendChild(label);
+                const label3 = document.createElement('p');
+                label3.className = 'judge-output-label';
+                label3.textContent = 'stdout';
+                verdictArea.appendChild(label3);
                 const stdoutBox = document.createElement('pre');
                 stdoutBox.className = 'judge-output-box';
                 stdoutBox.textContent = data.stdout;
@@ -205,6 +254,8 @@
                 if (data.verdict === 'accepted') {
                     showNotification(data.msg, 'success');
                     statusDisplay.textContent = '✅ Solved';
+                } else if (data.verdict === 'partial') {
+                    showNotification(data.msg, 'success');
                 } else {
                     showNotification(data.msg, 'error');
                 }
