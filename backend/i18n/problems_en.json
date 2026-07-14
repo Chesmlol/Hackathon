@@ -163,7 +163,7 @@
   },
   "sage_binary_necklaces": {
     "title": "Binary Necklaces (Burnside's Lemma)",
-    "statement": "Count binary necklaces of length \\(n\\) up to rotation. <br>Input: <code>8</code><br>Output: <code>36</code></p>"
+    "statement": "<p>Count binary necklaces of length \\(n\\) up to rotation. <br>Input: <code>8</code><br>Output: <code>36</code></p>"
   },
   "sage_necklaces_k_black": {
     "title": "Binary Necklaces with a Fixed Number of Black Beads",

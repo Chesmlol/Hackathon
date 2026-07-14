@@ -78,7 +78,7 @@
     "statement": "<p>Nếu n vật phân biệt được đặt vào k hộp phân biệt, có bao nhiêu cách thực hiện nếu n = 4 và k = 2?</p>"
   },
   "sum_coeff_2x_3y_5": {
-    "title": "Tổng các hệ số của (2x − 3y)^5",
+    "title": "Tổng các hệ số của (2x − 3y)⁵",
     "statement": "<p>Tìm tổng các hệ số trong khai triển (2x − 3y)⁵.</p>"
   },
   "committee_2men_2women": {
@@ -103,7 +103,7 @@
   },
   "sage_multinomial_coeff": {
     "title": "Hệ số đa thức trong khai triển",
-    "statement": "<p>Tìm hệ số của x^a·y^b·z^c trong khai triển (x + y + z)^n với a + b + c = n. <br>Input: <code>8 3 2 3</code><br>Output: <code>560</code></p>"
+    "statement": "<p>Tìm hệ số của \\(x^a y^b z^c\\) trong khai triển \\((x + y + z)^n\\), với \\(a + b + c = n\\). <br>Input: <code>8 3 2 3</code><br>Output: <code>560</code></p>"
   },
   "sage_bounded_stars_bars": {
     "title": "Bài toán chia sao có giới hạn",
@@ -139,7 +139,7 @@
   },
   "sage_mixed_gen_func_coeff": {
     "title": "Tìm hệ số từ hàm sinh hỗn hợp",
-    "statement": "<p>Tìm hệ số của x^a·y^b trong (1 + x + x²)^m·(1 + y)^n. <br>Input: <code>4 5 3 2</code><br>Output: <code>120</code></p>"
+    "statement": "<p>Tìm hệ số của \\(x^a y^b\\) trong \\((1 + x + x^2)^m (1+y)^n\\). <br>Input: <code>4 5 3 2</code><br>Output: <code>120</code></p>"
   },
   "sage_ordered_bell": {
     "title": "Số Bell có thứ tự (số Fubini)",

@@ -3279,9 +3279,9 @@ def blog_post_page(post_id):
     uname, dname, title, content, created_at, score, xp, admin_flag = row
     _, rank_color = get_rank_info(xp or 0, bool(admin_flag))
 
-    # Only the author can delete their own post.
+    # The author or an admin can delete a post.
     delete_post_btn = ""
-    if u and u == uname:
+    if u and (u == uname or is_admin(u)):
         delete_post_btn = (
             f'<button type="button" id="delete-post-btn" class="comment-delete-btn" '
             f'style="margin-top:0;" data-post-id="{post_id}">{t("blog.delete_post")}</button>'
@@ -3524,7 +3524,7 @@ def delete_blog_post(post_id):
         row = c.execute("SELECT username FROM blog_posts WHERE id=?", (post_id,)).fetchone()
         if not row:
             return jsonify({"success": False, "msg": t("api.post_not_found")}), 404
-        if row[0] != u:
+        if row[0] != u and not is_admin(u):
             return jsonify({"success": False, "msg": t("api.delete_own_posts_only")}), 403
 
         c.execute("DELETE FROM blog_comments WHERE post_id=?", (post_id,))

@@ -608,9 +608,9 @@
 
   "practice.sidebar_type": "LOẠI",
 
-  "practice.type_answer": "TRẢ LỜI",
+  "practice.type_answer": "ANSWER",
 
-  "practice.type_code": "MÃ",
+  "practice.type_code": "CODE",
 
   "practice.sort_default": "MẶC ĐỊNH",
 
@@ -670,13 +670,13 @@
 
   "problem.tagline": "> THÔNG TIN NHIỆM VỤ",
 
-  "problem.type.answer": "TRẢ LỜI",
+  "problem.type.answer": "ANSWER",
 
-  "problem.type.answer_display": "📝 TRẢ LỜI",
+  "problem.type.answer_display": "📝 ANSWER",
 
-  "problem.type.code": "MÃ",
+  "problem.type.code": "CODE",
 
-  "problem.type.code_display": "💻 MÃ",
+  "problem.type.code_display": "💻 CODE",
 
   "problem.type_label": "⊞ Loại:",
 

@@ -538,5 +538,11 @@
         loadComments();
     })();
     </script>
+
+    <!-- MathJax: problem statements may contain LaTeX math using \( \) / \[ \] delimiters -->
+    <script>
+        window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
 </body>
 </html>
