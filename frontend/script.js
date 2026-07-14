@@ -6,6 +6,6 @@ async function subAns(id) {
         showNotification(d.msg, d.success ? "success" : "error");
         if (d.success) setTimeout(() => { location.reload(); }, 800);
     } catch (e) {
-        showNotification("Error submitting your answer.", "error");
+        showNotification(t("js.submit_answer_error"), "error");
     }
 }

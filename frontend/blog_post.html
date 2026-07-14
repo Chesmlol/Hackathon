@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,6 +40,7 @@
         <div style="margin-top:20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <a href="/blog" class="back-btn">&larr; Back to Blog</a>
             {{delete_post_btn}}
+            {{report_post_btn}}
         </div>
 
         <div class="comments-section" id="comments-section" data-post-id="{{post_id}}">
@@ -120,7 +121,7 @@
 
         submitBtn.addEventListener('click', async () => {
             const content = textarea.value.trim();
-            if (!content) { showNotification('Write something before posting.', 'error'); return; }
+            if (!content) { showNotification(t('comments.empty_post'), 'error'); return; }
             submitBtn.disabled = true;
             try {
                 const res = await fetch(`/api/blog_comments/${postId}`, {
@@ -130,15 +131,15 @@
                 });
                 const data = await res.json();
                 if (!data.success) {
-                    showNotification(data.msg || 'Could not post comment.', 'error');
+                    showNotification(data.msg || t('comments.post_error'), 'error');
                 } else {
                     textarea.value = '';
                     counter.textContent = `0 / ${MAX_LEN}`;
                     appendComment(data.comment);
-                    showNotification('Comment posted!', 'success');
+                    showNotification(t('comments.posted'), 'success');
                 }
             } catch (e) {
-                showNotification('Error posting comment.', 'error');
+                showNotification(t('comments.posting_error'), 'error');
             } finally {
                 submitBtn.disabled = false;
             }
@@ -194,7 +195,7 @@
             delBtn.className = 'comment-delete-btn';
             delBtn.textContent = 'Delete';
             delBtn.addEventListener('click', async () => {
-                if (!confirm('Delete this comment?')) return;
+                if (!confirm(t('comments.delete_confirm'))) return;
                 try {
                     const res = await fetch(`/api/blog_comments/${c.id}/delete`, { method: 'POST' });
                     const data = await res.json();
@@ -207,14 +208,39 @@
                             listEl.appendChild(p);
                         }
                     } else {
-                        showNotification(data.msg || 'Could not delete comment.', 'error');
+                        showNotification(data.msg || t('comments.delete_error'), 'error');
                     }
                 } catch (e) {
-                    showNotification('Error deleting comment.', 'error');
+                    showNotification(t('comments.deleting_error'), 'error');
                 }
             });
             body.appendChild(delBtn);
         }
+
+        const reportBtn = document.createElement('button');
+        reportBtn.type = 'button';
+        reportBtn.className = 'comment-report-btn';
+        reportBtn.textContent = t('comments.report');
+        reportBtn.addEventListener('click', async () => {
+            const reason = prompt(t('comments.report_prompt'));
+            if (reason === null) return;
+            try {
+                const res = await fetch(`/api/blog_comments/${c.id}/report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason || '' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification(data.msg || t('comments.report_success'), 'success');
+                } else {
+                    showNotification(data.msg || t('comments.report_error'), 'error');
+                }
+            } catch (e) {
+                showNotification(t('comments.reporting_error'), 'error');
+            }
+        });
+        body.appendChild(reportBtn);
 
         item.appendChild(body);
         return item;

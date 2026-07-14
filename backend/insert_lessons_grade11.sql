@@ -3,7 +3,7 @@ DELETE FROM lessons WHERE title = 'Union, Intersection, and Independent Events';
 DELETE FROM lessons WHERE title = 'Addition Rule of Probability';
 DELETE FROM lessons WHERE title = 'Product of Probabilities of Two Independent Events';
 
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Union, Intersection, and Independent Events', 'Hợp, giao và tính độc lập của biến cố — quy tắc cộng xác suất.', '', 'article', '11', '<h1 class="unnumbered"
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Union, Intersection, and Independent Events', 'Union, intersection, and independence of events — addition rule of probability.', '', 'article', '11', '<h1 class="unnumbered"
 id="union-intersection-and-independence-of-events-grade-11">Union,
 Intersection, and Independence of Events (Grade 11)</h1>
 <h2 class="unnumbered" id="union-of-events">1. Union of Events</h2>
@@ -148,7 +148,7 @@ Since <span class="math inline">\(P(A\cap B) = P(A)P(B)\)</span>, events
 class="math inline">\(B\)</span> are independent.</p>
 </div>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Addition Rule of Probability', 'Đi sâu vào quy tắc cộng P(A∪B) = P(A) + P(B) − P(A∩B) với ví dụ xúc xắc.', '', 'article', '11', '<h1 class="unnumbered" id="addition-rule-of-probability">Addition Rule
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Addition Rule of Probability', 'Deep dive into addition rule P(A∪B) = P(A) + P(B) − P(A∩B) with dice examples.', '', 'article', '11', '<h1 class="unnumbered" id="addition-rule-of-probability">Addition Rule
 of Probability</h1>
 <p>For any two events <span class="math inline">\(A\)</span> and <span
 class="math inline">\(B\)</span> in a sample space <span
@@ -283,7 +283,7 @@ class="math inline">\(P(E\cap F)=\frac{3}{8}\)</span>.</p></li>
               =\frac{7}{8}.\]</span></p></li>
 </ol>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Product of Probabilities of Two Independent Events', 'Quy tắc nhân cho biến cố độc lập P(A∩B) = P(A)P(B).', '', 'article', '11', '<h1 class="unnumbered"
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Product of Probabilities of Two Independent Events', 'Multiplication rule for independent events P(A∩B) = P(A)P(B).', '', 'article', '11', '<h1 class="unnumbered"
 id="product-of-the-probabilities-of-two-independent-events">Product of
 the Probabilities of Two Independent Events</h1>
 <p><em>Target audience: Grade 11 Mathematics</em></p>

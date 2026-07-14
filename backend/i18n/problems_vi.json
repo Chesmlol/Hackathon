@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "description": "Practice problem translations keyed by initial_misions.id",
+    "fields": [
+      "title",
+      "statement"
+    ],
+    "schema_version": 1,
+    "total_problems": 40,
+    "source": "Step 2: vi from owner docx files; en from SQL seeds"
+  },
+  "perm_cat": {
+    "title": "Hoán vị của từ \"CAT\"",
+    "statement": "<p>Tính số hoán vị phân biệt của các chữ cái trong từ “CAT”.</p>"
+  },
+  "perm_book": {
+    "title": "Hoán vị của từ \"BOOK\"",
+    "statement": "<p>Tính số hoán vị phân biệt của các chữ cái trong từ “BOOK”.</p>"
+  },
+  "comb_committee_3of10": {
+    "title": "Tính số cách chọn 3 học sinh từ một lớp gồm 10 học sinh để lập thành một ban đại diện.",
+    "statement": "<p>Tính số cách chọn 3 học sinh từ một lớp gồm 10 học sinh để lập thành một ban đại diện.</p>"
+  },
+  "binom_coeff_x3_xy7": {
+    "title": "Tìm hệ số của x³ trong khai triển (x + y)⁷.",
+    "statement": "<p>Tìm hệ số của x³ trong khai triển (x + y)⁷.</p>"
+  },
+  "stars_bars_nonneg_5": {
+    "title": "Số nghiệm nguyên không âm của x1+x2+x3=5",
+    "statement": "<p>Xác định số nghiệm nguyên không âm của phương trình x₁ + x₂ + x₃ = 5.</p>"
+  },
+  "pigeonhole_birth_month": {
+    "title": "Nguyên lý chuồng bồ câu với tháng sinh",
+    "statement": "<p>Trong một nhóm 50 người, cần chọn ít nhất bao nhiêu người để đảm bảo có ít nhất 2 người cùng tháng sinh (giả sử có 12 tháng)?</p>"
+  },
+  "arrange_4_books": {
+    "title": "Tính số cách sắp xếp 4 cuốn sách phân biệt trên một kệ sách.",
+    "statement": "<p>Tính số cách sắp xếp 4 cuốn sách phân biệt trên một kệ sách.</p>"
+  },
+  "binom_coeff_x2y4_xy6": {
+    "title": "Tìm hệ số của x²y⁴ trong khai triển (x + y)⁶.",
+    "statement": "<p>Tìm hệ số của x²y⁴ trong khai triển (x + y)⁶.</p>"
+  },
+  "balls_boxes_no_empty": {
+    "title": "Có bao nhiêu cách phân phối 5 quả bóng khác nhau vào 3 hộp khác nhau sao cho không có hộp nào trống?",
+    "statement": "<p>Có bao nhiêu cách phân phối 5 quả bóng khác nhau vào 3 hộp khác nhau sao cho không có hộp nào trống?</p>"
+  },
+  "coin_flips_6_heads": {
+    "title": "Một đồng xu được tung 10 lần. Có bao nhiêu dãy kết quả chứa đúng 6 lần mặt ngửa?",
+    "statement": "<p>Một đồng xu được tung 10 lần. Có bao nhiêu dãy kết quả chứa đúng 6 lần mặt ngửa?</p>"
+  },
+  "sum_binom_coeff_n5": {
+    "title": "Tổng các hệ số nhị thức (n = 5)",
+    "statement": "<p>Tính giá trị của tổng Σ (từ k = 0 đến 5) của C(5, k).</p>"
+  },
+  "positive_int_solutions_4var": {
+    "title": "Số nghiệm nguyên dương (4 biến)",
+    "statement": "<p>Có bao nhiêu nghiệm nguyên dương của phương trình x₁ + x₂ + x₃ + x₄ = 10?</p>"
+  },
+  "perm_mississippi": {
+    "title": "Hoán vị của từ \"MISSISSIPPI\"",
+    "statement": "<p>Tính số hoán vị của các chữ cái trong từ “MISSISSIPPI”.</p>"
+  },
+  "binom_coeff_x4_1x10": {
+    "title": "Hệ số của x⁴ trong khai triển (1 + x)¹⁰ là bao nhiêu?",
+    "statement": "<p>Hệ số của x⁴ trong khai triển (1 + x)¹⁰ là bao nhiêu?</p>"
+  },
+  "pigeonhole_mod7": {
+    "title": "Nguyên lý chuồng bồ câu: Cùng số dư khi chia cho 7",
+    "statement": "<p>Trong một tập hợp gồm 100 số nguyên, cần chọn tối thiểu bao nhiêu số để đảm bảo có 2 số cùng số dư khi chia cho 7?</p>"
+  },
+  "candies_min_one_each": {
+    "title": "Tính số cách phân phát 6 viên kẹo giống hệt nhau cho 3 đứa trẻ khác nhau sao cho mỗi đứa trẻ nhận được ít nhất 1 viên kẹo.",
+    "statement": "<p>Tính số cách phân phát 6 viên kẹo giống hệt nhau cho 3 đứa trẻ khác nhau sao cho mỗi đứa trẻ nhận được ít nhất 1 viên kẹo.</p>"
+  },
+  "functions_4_objects_2_boxes": {
+    "title": "Nếu n vật phân biệt được đặt vào k hộp phân biệt, có bao nhiêu cách thực hiện nếu n = 4 và k = 2?",
+    "statement": "<p>Nếu n vật phân biệt được đặt vào k hộp phân biệt, có bao nhiêu cách thực hiện nếu n = 4 và k = 2?</p>"
+  },
+  "sum_coeff_2x_3y_5": {
+    "title": "Tổng các hệ số của (2x − 3y)^5",
+    "statement": "<p>Tìm tổng các hệ số trong khai triển (2x − 3y)⁵.</p>"
+  },
+  "committee_2men_2women": {
+    "title": "Một ban đại diện gồm 4 người được thành lập từ 5 nam và 5 nữ. Có bao nhiêu cách thực hiện nếu ban đại diện phải có đúng 2 nam và 2 nữ?",
+    "statement": "<p>Một ban đại diện gồm 4 người được thành lập từ 5 nam và 5 nữ. Có bao nhiêu cách thực hiện nếu ban đại diện phải có đúng 2 nam và 2 nữ?</p>"
+  },
+  "prove_symmetry_identity": {
+    "title": "Chứng minh C(n,k)=C(n,n-k)",
+    "statement": "<p>Chứng minh rằng C(n, k) = C(n, n − k) với n = 6, k = 2 và cho kết quả bằng số.</p>"
+  },
+  "sage_multiset_no_adj": {
+    "title": "Hoán vị đa tập không có hai chữ cái giống nhau đứng cạnh nhau",
+    "statement": "<p>Một từ chứa a chữ A, b chữ B và c chữ C. Đếm số hoán vị phân biệt sao cho không có hai chữ cái giống nhau nào đứng cạnh nhau. <br>Input: <code>2 1 1</code><br>Output: <code>6</code></p>"
+  },
+  "sage_circular_arrangements": {
+    "title": "Sắp xếp theo vòng tròn (không phân biệt phép quay)",
+    "statement": "<p>Cho n vật phân biệt, đếm số cách sắp xếp vòng tròn (coi các cách sai khác nhau chỉ bởi phép quay là như nhau). <br>Input: <code>7</code><br>Output: <code>720</code></p>"
+  },
+  "sage_circular_not_adjacent": {
+    "title": "Sắp xếp vòng tròn với điều kiện hai phần tử không được kề nhau",
+    "statement": "<p>Cho n vật phân biệt xếp trên một vòng tròn, đếm số cách sắp xếp sao cho hai vật đặc biệt không đứng cạnh nhau. <br>Input: <code>6</code><br>Output: <code>48</code></p>"
+  },
+  "sage_multinomial_coeff": {
+    "title": "Hệ số đa thức trong khai triển",
+    "statement": "<p>Tìm hệ số của x^a·y^b·z^c trong khai triển (x + y + z)^n với a + b + c = n. <br>Input: <code>8 3 2 3</code><br>Output: <code>560</code></p>"
+  },
+  "sage_bounded_stars_bars": {
+    "title": "Bài toán chia sao có giới hạn",
+    "statement": "<p>Đếm số nghiệm nguyên không âm của phương trình x1 + x2 + ... + xk = n với ràng buộc bổ sung xi ≤ ui với mọi i. <br>Input: <code>7 2 3 4</code><br>Output: <code>5</code></p>"
+  },
+  "sage_surjections": {
+    "title": "Đếm số toàn ánh",
+    "statement": "<p>Có bao nhiêu toàn ánh (surjective function) từ một tập hợp n phần tử lên một tập hợp k phần tử? <br>Input: <code>8 4</code><br>Output: <code>40824</code></p>"
+  },
+  "sage_set_partitions_k_blocks": {
+    "title": "Phân hoạch một tập thành đúng k khối",
+    "statement": "<p>Đếm số cách phân hoạch một tập hợp n phần tử thành đúng k tập con khác rỗng, không đánh nhãn (unlabeled). <br>Input: <code>9 3</code><br>Output: <code>3025</code></p>"
+  },
+  "sage_bell_number": {
+    "title": "Số Bell",
+    "statement": "<p>Tính số Bell Bn, tức số cách phân hoạch một tập hợp n phần tử. <br>Input: <code>8</code><br>Output: <code>4140</code></p>"
+  },
+  "sage_gaussian_binomial": {
+    "title": "Hệ số nhị thức Gauss (q-nhị thức)",
+    "statement": "<p>Tính số không gian con k chiều của không gian vectơ n chiều trên trường hữu hạn F_q. <br>Input: <code>2 6 3</code><br>Output: <code>1395</code></p>"
+  },
+  "sage_derangements_r_fixed": {
+    "title": "Hoán vị có đúng r điểm cố định",
+    "statement": "<p>Đếm số hoán vị của tập {1, ..., n} có đúng r điểm cố định. <br>Input: <code>7 2</code><br>Output: <code>105</code></p>"
+  },
+  "sage_poisson_binomial": {
+    "title": "Phân phối Poisson–Nhị thức: Xác suất chính xác có k lần thành công",
+    "statement": "<p>Cho các phép thử Bernoulli độc lập với xác suất thành công lần lượt là p1, ..., pn, tính xác suất có đúng k lần thành công. <br>Input: <code>1/2 1/3 1/4 2</code><br>Output: <code>11/24</code></p>"
+  },
+  "sage_forced_nonempty_boxes": {
+    "title": "Hàm toàn ánh với các hộp bắt buộc không rỗng",
+    "statement": "<p>Phân phối n quả bóng phân biệt vào k hộp phân biệt sao cho mọi hộp đều khác rỗng, và một tập con hộp được chỉ định trước phải chứa ít nhất một quả bóng. <br>Input: <code>6 4 2</code><br>Output: <code>1560</code></p>"
+  },
+  "sage_mixed_gen_func_coeff": {
+    "title": "Tìm hệ số từ hàm sinh hỗn hợp",
+    "statement": "<p>Tìm hệ số của x^a·y^b trong (1 + x + x²)^m·(1 + y)^n. <br>Input: <code>4 5 3 2</code><br>Output: <code>120</code></p>"
+  },
+  "sage_ordered_bell": {
+    "title": "Số Bell có thứ tự (số Fubini)",
+    "statement": "<p>Đếm số cách phân hoạch có thứ tự của một tập hợp n phần tử. <br>Input: <code>5</code><br>Output: <code>541</code></p>"
+  },
+  "sage_exactly_r_distinct": {
+    "title": "Có đúng r giá trị khác nhau trong n lần chọn",
+    "statement": "<p>Một chiếc bình chứa m màu được đánh nhãn. Rút n quả bóng độc lập, có hoàn lại. Đếm số dãy kết quả trong đó xuất hiện đúng r màu phân biệt. <br>Input: <code>4 5 3</code><br>Output: <code>1440</code></p>"
+  },
+  "sage_restricted_compositions": {
+    "title": "Phân hoạch số có ràng buộc bằng hàm sinh",
+    "statement": "<p>Đếm số nghiệm nguyên của phương trình x1 + ... + xk = n, trong đó mỗi xi thuộc một tập hữu hạn Si cho trước. <br>Input: <code>0,1 1,2 0,2 3</code><br>Output: <code>3</code></p>"
+  },
+  "sage_perms_c_cycles": {
+    "title": "Hoán vị có số chu trình cho trước",
+    "statement": "<p>Đếm số hoán vị của n phần tử có đúng c chu trình (cycle). <br>Input: <code>6 2</code><br>Output: <code>274</code></p>"
+  },
+  "sage_binomial_tail": {
+    "title": "Xác suất đuôi của phân phối nhị thức (ký hiệu)",
+    "statement": "<p>Cho X ~ Nhị thức(n, p). Tính chính xác Pr[X ≥ k] dưới dạng một hàm hữu tỉ theo p. <br>Input: <code>5 1/2 3</code><br>Output: <code>5/16</code></p>"
+  },
+  "sage_binary_necklaces": {
+    "title": "Vòng cổ nhị phân (Bổ đề Burnside)",
+    "statement": "<p>Đếm số vòng cổ nhị phân độ dài n, sai khác nhau bởi phép quay. <br>Input: <code>8</code><br>Output: <code>36</code></p>"
+  },
+  "sage_necklaces_k_black": {
+    "title": "Vòng cổ nhị phân có số hạt đen cố định",
+    "statement": "<p>Đếm số vòng cổ nhị phân độ dài n có đúng k hạt đen. <br>Input: <code>10 3</code><br>Output: <code>12</code></p>"
+  }
+}

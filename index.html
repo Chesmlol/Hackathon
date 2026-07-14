@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 
 <head>
     <meta charset="UTF-8">
@@ -16,7 +16,7 @@
 
     <header>
         <h1>ChanceField</h1>
-        <p>> PROBABILITIES!</p>
+        <p>{{home.tagline}}</p>
     </header>
 
     <nav>
@@ -28,7 +28,7 @@
         <!-- <div id="practice-container"></div> -->
 
         <section class="window about-window" aria-labelledby="about-heading">
-            <h2 id="about-heading">ABOUT US</h2>
+            <h2 id="about-heading">{{home.about_heading}}</h2>
 
             <div class="about-carousel" id="about-carousel" aria-roledescription="carousel" aria-label="About ChanceField">
                 <div class="about-slides">
@@ -200,9 +200,7 @@
             </div>
 
             <p class="about-desc">
-                ChanceField is a training ground for probability, combinatorics, and statistical thinking.
-                Work through bite-sized lessons, tackle archived problems on the judge, and climb the
-                leaderboard as you sharpen your intuition for chance &mdash; one roll, flip, and draw at a time.
+                {{home.about_desc}}
             </p>
         </section>
 
@@ -213,7 +211,7 @@
     </main>
 
     <footer>
-        <p>> "never gonna give you up" - Rick Astley</p>
+        <p>{{home.footer_quote}}</p>
     </footer>
 
     <script>

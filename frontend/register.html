@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
 
 <header>
     <h1>ChanceField</h1>
-    <p>> NEW AGENT REGISTRATION</p>
+    <p>{{register.header}}</p>
 </header>
 
 <nav>
@@ -18,24 +18,24 @@
 </nav>
 
 <div class="window" style="max-width:500px;margin:100px auto;">
-    <h2>REGISTER</h2>
+    <h2>{{register.heading}}</h2>
 
     <form id="regForm">
-        <label for="username" class="sr-only">Username</label>
-        <input type="text" name="username" id="username" placeholder="Username" autocomplete="username" required>
+        <label for="username" class="sr-only">{{register.username_label}}</label>
+        <input type="text" name="username" id="username" placeholder="{{register.username_placeholder}}" autocomplete="username" required>
 
-        <label for="email" class="sr-only">Email</label>
-        <input type="email" name="email" id="email" placeholder="Email" autocomplete="email" required>
+        <label for="email" class="sr-only">{{register.email_label}}</label>
+        <input type="email" name="email" id="email" placeholder="{{register.email_placeholder}}" autocomplete="email" required>
 
-        <label for="password" class="sr-only">Password</label>
-        <input type="password" name="password" id="password" placeholder="Password" autocomplete="new-password" required>
+        <label for="password" class="sr-only">{{register.password_label}}</label>
+        <input type="password" name="password" id="password" placeholder="{{register.password_placeholder}}" autocomplete="new-password" required>
 
-        <label for="confirm_password" class="sr-only">Confirm Password</label>
-        <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" autocomplete="new-password" required>
+        <label for="confirm_password" class="sr-only">{{register.confirm_label}}</label>
+        <input type="password" name="confirm_password" id="confirm_password" placeholder="{{register.confirm_placeholder}}" autocomplete="new-password" required>
         
         <div id="error-msg" role="alert" aria-live="polite" style="color: #ff3030; margin: 10px 0; font-weight: bold;"></div>
         
-        <button type="submit">REGISTER</button>
+        <button type="submit">{{register.submit_button}}</button>
     </form>
 
     <script>

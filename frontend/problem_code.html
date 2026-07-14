@@ -179,18 +179,18 @@
         cm.on('change', persist);
 
         resetBtn.addEventListener('click', () => {
-            if (cm.getValue().trim() && !confirm('Reset to the starter template? This will erase your current code.')) return;
+            if (cm.getValue().trim() && !confirm(t('problem.reset_confirm'))) return;
             cm.setValue(SAGE_TEMPLATE);
             persist();
         });
 
         const VERDICT_LABELS = {
-            accepted: '✅ Accepted — 100/100',
-            partial: '🟡 Partial Credit',
-            wrong_answer: '❌ Wrong Answer — 0/100',
-            compile_error: '⚠ Compile Error',
-            runtime_error: '⚠ Runtime Error',
-            time_limit_exceeded: '⏱ Time Limit Exceeded'
+            accepted: t('problem.verdict.accepted'),
+            partial: t('problem.verdict.partial'),
+            wrong_answer: t('problem.verdict.wrong_answer'),
+            compile_error: t('problem.verdict.compile_error'),
+            runtime_error: t('problem.verdict.runtime_error'),
+            time_limit_exceeded: t('problem.verdict.time_limit')
         };
 
         function renderVerdict(data) {
@@ -198,11 +198,11 @@
 
             const banner = document.createElement('div');
             banner.className = 'judge-verdict judge-verdict-' + data.verdict;
-            let label = VERDICT_LABELS[data.verdict] || data.msg || 'Unknown result';
+            let label = VERDICT_LABELS[data.verdict] || data.msg || t('problem.judge_error');
             // For partial-credit problems (score present and not already baked
             // into the label above), show the exact score out of 100.
             if (typeof data.score === 'number' && data.verdict === 'partial') {
-                label = '🟡 Partial Credit — ' + data.score + '/100';
+                label = t('problem.verdict.partial_score', {score: data.score});
             }
             banner.textContent = label;
             verdictArea.appendChild(banner);
@@ -210,7 +210,7 @@
             if (data.stderr) {
                 const label2 = document.createElement('p');
                 label2.className = 'judge-output-label';
-                label2.textContent = 'stderr';
+                label2.textContent = t('problem.stderr_label');
                 verdictArea.appendChild(label2);
                 const stderrBox = document.createElement('pre');
                 stderrBox.className = 'judge-output-box judge-output-stderr';
@@ -220,7 +220,7 @@
             if (data.stdout) {
                 const label3 = document.createElement('p');
                 label3.className = 'judge-output-label';
-                label3.textContent = 'stdout';
+                label3.textContent = t('problem.stdout_label');
                 verdictArea.appendChild(label3);
                 const stdoutBox = document.createElement('pre');
                 stdoutBox.className = 'judge-output-box';
@@ -232,12 +232,12 @@
         runBtn.addEventListener('click', async () => {
             const code = cm.getValue();
             if (!code.trim()) {
-                showNotification('Write some code before submitting.', 'error');
+                showNotification(t('js.write_code_before_submit'), 'error');
                 return;
             }
             runBtn.disabled = true;
-            runBtn.textContent = 'Judging…';
-            verdictArea.innerHTML = '<p class="comment-empty">Compiling and running your code…</p>';
+            runBtn.textContent = t('problem.judging');
+            verdictArea.innerHTML = '<p class="comment-empty">' + t('problem.judging_status') + '</p>';
             try {
                 const res = await fetch('/submit_code', {
                     method: 'POST',
@@ -247,7 +247,7 @@
                 const data = await res.json();
                 if (!data.success) {
                     verdictArea.innerHTML = '';
-                    showNotification(data.msg || 'Judge error.', 'error');
+                    showNotification(data.msg || t('js.judge_error'), 'error');
                     return;
                 }
                 renderVerdict(data);
@@ -261,7 +261,7 @@
                 }
             } catch (e) {
                 verdictArea.innerHTML = '';
-                showNotification('Error running your code.', 'error');
+                showNotification(t('js.run_code_error'), 'error');
             } finally {
                 runBtn.disabled = false;
                 runBtn.textContent = '▶ Run & Submit';
@@ -287,10 +287,10 @@
                 const p = document.createElement('p');
                 p.className = 'comment-login-prompt';
                 const span = document.createElement('span');
-                span.textContent = 'Log in to join the discussion.';
+                span.textContent = t('comments.login_prompt');
                 const a = document.createElement('a');
                 a.href = '/frontend/login.html';
-                a.textContent = 'Log In';
+                a.textContent = t('comments.login_link');
                 a.className = 'back-btn';
                 p.appendChild(span);
                 p.appendChild(a);
@@ -304,7 +304,7 @@
             const label = document.createElement('label');
             label.setAttribute('for', 'comment-input');
             label.className = 'sr-only';
-            label.textContent = 'Write a comment';
+            label.textContent = t('comments.write_label');
 
             const textarea = document.createElement('textarea');
             textarea.id = 'comment-input';
@@ -331,7 +331,7 @@
 
             submitBtn.addEventListener('click', async () => {
                 const content = textarea.value.trim();
-                if (!content) { showNotification('Write something before posting.', 'error'); return; }
+                if (!content) { showNotification(t('comments.empty_post'), 'error'); return; }
                 submitBtn.disabled = true;
                 try {
                     const res = await fetch(`/api/comments/${problemId}`, {
@@ -341,15 +341,15 @@
                     });
                     const data = await res.json();
                     if (!data.success) {
-                        showNotification(data.msg || 'Could not post comment.', 'error');
+                        showNotification(data.msg || t('comments.post_error'), 'error');
                     } else {
                         textarea.value = '';
                         counter.textContent = `0 / ${MAX_LEN}`;
                         prependComment(data.comment);
-                        showNotification('Comment posted!', 'success');
+                        showNotification(t('comments.posted'), 'success');
                     }
                 } catch (e) {
-                    showNotification('Error posting comment.', 'error');
+                    showNotification(t('comments.posting_error'), 'error');
                 } finally {
                     submitBtn.disabled = false;
                 }
@@ -374,7 +374,7 @@
             const upBtn = document.createElement('button');
             upBtn.type = 'button';
             upBtn.className = 'vote-btn vote-up' + (c.user_vote === 1 ? ' active' : '');
-            upBtn.setAttribute('aria-label', 'Upvote comment');
+            upBtn.setAttribute('aria-label', t('comments.upvote_aria'));
             upBtn.setAttribute('aria-pressed', c.user_vote === 1 ? 'true' : 'false');
             upBtn.textContent = '▲';
 
@@ -385,7 +385,7 @@
             const downBtn = document.createElement('button');
             downBtn.type = 'button';
             downBtn.className = 'vote-btn vote-down' + (c.user_vote === -1 ? ' active' : '');
-            downBtn.setAttribute('aria-label', 'Downvote comment');
+            downBtn.setAttribute('aria-label', t('comments.downvote_aria'));
             downBtn.setAttribute('aria-pressed', c.user_vote === -1 ? 'true' : 'false');
             downBtn.textContent = '▼';
 
@@ -398,7 +398,7 @@
                     });
                     const data = await res.json();
                     if (!data.success) {
-                        showNotification(data.msg || 'Please log in to vote.', 'error');
+                        showNotification(data.msg || t('api.login_to_vote'), 'error');
                         return;
                     }
                     scoreEl.textContent = data.score;
@@ -407,7 +407,7 @@
                     downBtn.classList.toggle('active', data.user_vote === -1);
                     downBtn.setAttribute('aria-pressed', data.user_vote === -1 ? 'true' : 'false');
                 } catch (e) {
-                    showNotification('Error casting vote.', 'error');
+                    showNotification(t('comments.vote_error'), 'error');
                 }
             }
 
@@ -455,7 +455,7 @@
                 delBtn.className = 'comment-delete-btn';
                 delBtn.textContent = 'Delete';
                 delBtn.addEventListener('click', async () => {
-                    if (!confirm('Delete this comment?')) return;
+                    if (!confirm(t('comments.delete_confirm'))) return;
                     try {
                         const res = await fetch(`/api/comments/${c.id}/delete`, { method: 'POST' });
                         const data = await res.json();
@@ -464,14 +464,14 @@
                             if (!listEl.querySelector('.comment-item')) {
                                 const p = document.createElement('p');
                                 p.className = 'comment-empty';
-                                p.textContent = 'No comments yet — be the first to share a thought!';
+                                p.textContent = t('comments.empty');
                                 listEl.appendChild(p);
                             }
                         } else {
-                            showNotification(data.msg || 'Could not delete comment.', 'error');
+                            showNotification(data.msg || t('comments.delete_error'), 'error');
                         }
                     } catch (e) {
-                        showNotification('Error deleting comment.', 'error');
+                        showNotification(t('comments.deleting_error'), 'error');
                     }
                 });
                 body.appendChild(delBtn);
@@ -481,7 +481,7 @@
                 reportBtn.className = 'comment-report-btn';
                 reportBtn.textContent = 'Report';
                 reportBtn.addEventListener('click', async () => {
-                    const reason = window.prompt('Why are you reporting this comment? (optional)') || '';
+                    const reason = window.prompt(t('comments.report_prompt')) || '';
                     try {
                         const res = await fetch(`/api/comments/${c.id}/report`, {
                             method: 'POST',
@@ -489,13 +489,13 @@
                             body: JSON.stringify({ reason })
                         });
                         const data = await res.json();
-                        showNotification(data.msg || (data.success ? 'Reported.' : 'Could not report comment.'), data.success ? 'success' : 'error');
+                        showNotification(data.msg || (data.success ? t('comments.report_success') : t('comments.report_error')), data.success ? 'success' : 'error');
                         if (data.success) {
                             reportBtn.disabled = true;
-                            reportBtn.textContent = 'Reported';
+                            reportBtn.textContent = t('comments.reported');
                         }
                     } catch (e) {
-                        showNotification('Error reporting comment.', 'error');
+                        showNotification(t('comments.reporting_error'), 'error');
                     }
                 });
                 body.appendChild(reportBtn);
@@ -521,7 +521,7 @@
                 if (!data.comments || data.comments.length === 0) {
                     const p = document.createElement('p');
                     p.className = 'comment-empty';
-                    p.textContent = 'No comments yet — be the first to share a thought!';
+                    p.textContent = t('comments.empty');
                     listEl.appendChild(p);
                     return;
                 }
@@ -530,7 +530,7 @@
                 listEl.innerHTML = '';
                 const p = document.createElement('p');
                 p.className = 'comment-empty';
-                p.textContent = 'Could not load comments.';
+                p.textContent = t('comments.load_error');
                 listEl.appendChild(p);
             }
         }

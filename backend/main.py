@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
+from i18n import get_lang, t, t_problem, get_cf_strings_script
 try:
     import resource  # POSIX only; used for best-effort CPU/memory limits on judged code
 except ImportError:
@@ -152,7 +153,8 @@ def init():
             description TEXT,
             link TEXT,
             type TEXT DEFAULT 'text',
-            difficulty TEXT DEFAULT '10'
+            difficulty TEXT DEFAULT '10',
+            language TEXT DEFAULT 'en'
         )""")
 
         # Migrate older lessons tables that predate the type/difficulty columns
@@ -166,6 +168,9 @@ def init():
         # unused for these rows — article lessons don't point at a file.
         if "content" not in existing_cols:
             c.execute("ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT ''")
+        # Migrate: 'language' column to separate English and Vietnamese lessons
+        if "language" not in existing_cols:
+            c.execute("ALTER TABLE lessons ADD COLUMN language TEXT DEFAULT 'en'")
 
         # Comments on problem pages, plus one-vote-per-user tracking so a
         # user's up/downvote can be toggled off or switched cleanly.
@@ -195,6 +200,28 @@ def init():
             created_at TEXT NOT NULL,
             resolved INTEGER DEFAULT 0,
             UNIQUE(comment_id, reporter_username)
+        )""")
+
+        # User-submitted reports on blog comments, for admin moderation.
+        c.execute("""CREATE TABLE IF NOT EXISTS blog_comment_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            comment_id INTEGER NOT NULL,
+            reporter_username TEXT NOT NULL,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            resolved INTEGER DEFAULT 0,
+            UNIQUE(comment_id, reporter_username)
+        )""")
+
+        # User-submitted reports on blog posts, for admin moderation.
+        c.execute("""CREATE TABLE IF NOT EXISTS blog_post_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            reporter_username TEXT NOT NULL,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            resolved INTEGER DEFAULT 0,
+            UNIQUE(post_id, reporter_username)
         )""")
 
         # Blog: posts, one-vote-per-user tracking (up/downvote, toggle-able
@@ -299,24 +326,24 @@ def banned_page_html(u):
     below). Deliberately does NOT expose the account/logout nav so a banned
     user can't casually keep browsing - the only way forward is Log Out."""
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="{get_lang()}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Banned - ChanceField</title>
+    <title>{t("ban.title")}</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header>
     <h1>ChanceField</h1>
-    <p>&gt; ACCESS DENIED</p>
+    <p>{t("ban.access_denied")}</p>
 </header>
 <main>
     <section class="window" style="max-width:600px; margin:100px auto; text-align:center; border-color:#ff3030; box-shadow:0 0 24px rgba(255,48,48,0.45);">
-        <h2 style="color:#ff3030; text-shadow:0 0 10px #ff3030;">⛔ ACCOUNT BANNED</h2>
-        <p style="font-size:1.35rem; margin:22px 0;">The account <strong>{html.escape(u)}</strong> has been suspended by an administrator.</p>
-        <p style="opacity:0.8; margin-bottom:26px;">You can no longer use this account. If you believe this is a mistake, please contact support.</p>
-        <a href="/logout" class="back-btn" style="border-color:#ff3030; color:#ff3030; text-shadow:0 0 5px #ff3030; box-shadow:0 0 5px #ff3030, inset 0 0 5px rgba(255,48,48,0.2);">Log Out</a>
+        <h2 style="color:#ff3030; text-shadow:0 0 10px #ff3030;">{t("ban.heading")}</h2>
+        <p style="font-size:1.35rem; margin:22px 0;">{t("ban.body", username=html.escape(u))}</p>
+        <p style="opacity:0.8; margin-bottom:26px;">{t("ban.support")}</p>
+        <a href="/logout" class="back-btn" style="border-color:#ff3030; color:#ff3030; text-shadow:0 0 5px #ff3030; box-shadow:0 0 5px #ff3030, inset 0 0 5px rgba(255,48,48,0.2);">{t("ban.logout")}</a>
     </section>
 </main>
 </body>
@@ -337,13 +364,13 @@ def build_warning_popup_html(message):
             font-family:'VT323', monospace;">
     <div style="font-size:3rem; margin-bottom:10px;">⚠</div>
     <h2 id="cf-warning-title" style="color:#ffcc00; text-shadow:0 0 10px #ffcc00; font-size:2rem; margin-bottom:18px; letter-spacing:2px;">
-        ADMIN WARNING
+        {t("warning.title")}
     </h2>
     <p style="color:#fff; font-size:1.3rem; line-height:1.5; white-space:pre-wrap; word-break:break-word; margin-bottom:26px;">{safe_msg}</p>
     <button type="button" onclick="cfAckWarning()"
             style="background:#ffcc00; color:#000; border:2px solid #ffcc00; padding:14px 32px;
                    font-size:1.3rem; font-family:inherit; cursor:pointer; font-weight:bold;">
-        I UNDERSTAND
+        {t("warning.acknowledge")}
     </button>
 </div>
 <script>
@@ -405,7 +432,7 @@ def colored_name_link_html(username, display_name, color):
 
 def build_search_results_html(q):
     if not q:
-        return '<p class="search-empty">Type a username or display name to search.</p>'
+        return f'<p class="search-empty">{t("search.empty_prompt")}</p>'
 
     with sqlite3.connect(DB_U) as c:
         matches = c.execute(
@@ -415,7 +442,7 @@ def build_search_results_html(q):
         ).fetchall()
 
     if not matches:
-        return f'<p class="search-empty">No users found matching "{q}".</p>'
+        return f'<p class="search-empty">{t("search.no_results").format(q=q)}</p>'
 
     items = []
     for uname, dname, xp, admin_flag in matches:
@@ -456,24 +483,24 @@ def moderate_comment(text):
     rejection. Checked server-side so it can't be bypassed from the client."""
     text = (text or "").strip()
     if not text:
-        return None, "Comment can't be empty."
+        return None, t("api.comment_empty")
     if len(text) > COMMENT_MAX_LEN:
-        return None, f"Comments are limited to {COMMENT_MAX_LEN} characters."
+        return None, t("api.comment_too_long").format(max=COMMENT_MAX_LEN)
 
     lowered = text.lower()
     for w in BAD_WORDS:
         if re.search(rf'\b{re.escape(w)}\b', lowered):
-            return None, "Please keep comments respectful — that language isn't allowed here."
+            return None, t("api.comment_profanity")
 
     if EMAIL_RE.search(text):
-        return None, "For your privacy and safety, please don't post email addresses."
+        return None, t("api.comment_no_email")
     if PHONE_RE.search(text):
-        return None, "For your privacy and safety, please don't post phone numbers."
+        return None, t("api.comment_no_phone")
 
     return text, None
 
 def resolve_lesson_link(link):
-    """DB stores lesson links as paths relative to frontend/ (e.g. 'lessons/test.mp4'),
+    """DB stores lesson links as paths relative to frontend/ (e.g. 'video/test.mp4'),
     or full http(s) URLs. Used bare, a relative path breaks under /lesson/<id> because
     the browser resolves it relative to that URL instead of to the site root.
     This normalizes it to something that actually resolves."""
@@ -508,28 +535,45 @@ def nav_html(u):
     def mark(route):
         return ' aria-current="page"' if path == route else ''
 
-    search_form = '''<form action="/search" method="GET" class="nav-search-form" role="search">
-        <label for="nav-search-input" class="sr-only">Search users</label>
-        <input type="text" id="nav-search-input" name="q" placeholder="Find a user..." class="nav-search-input" autocomplete="off">
-        <button type="submit" class="nav-search-btn" aria-label="Search users">\U0001f50d</button>
+    search_form = f'''<form action="/search" method="GET" class="nav-search-form" role="search">
+        <label for="nav-search-input" class="sr-only">{t("nav.search_label")}</label>
+        <input type="text" id="nav-search-input" name="q" placeholder="{t("nav.search_placeholder")}" class="nav-search-input" autocomplete="off">
+        <button type="submit" class="nav-search-btn" aria-label="{t("nav.search_button")}">\U0001f50d</button>
     </form>'''
 
-    nav_left = f'''<a href="/"{mark("/")}>HOME</a>
-    <a href="/blog"{mark("/blog")}>BLOG</a>
-    <a href="/learn"{mark("/learn")}>LEARN</a>
-    <a href="/practice"{mark("/practice")}>PRACTICE</a>
-    <a href="/ranking"{mark("/ranking")}>RANKING</a>'''
+    # Language switcher
+    current_lang = get_lang()
+    en_active = ' active' if current_lang == 'en' else ''
+    vi_active = ' active' if current_lang == 'vi' else ''
+    lang_switcher = f'''<div class="lang-switcher" role="group" aria-label="{t("lang.switcher_label")}">
+    <button type="button" class="lang-btn{en_active}" data-lang="en" onclick="setLanguage('en')">EN</button>
+    <button type="button" class="lang-btn{vi_active}" data-lang="vi" onclick="setLanguage('vi')">VI</button>
+</div>'''
+
+    # Use translated nav items for all routes
+    nav_left = f'''<a href="/"{mark("/")}>{t("nav.home")}</a>
+    <a href="/blog"{mark("/blog")}>{t("nav.blog")}</a>
+    <a href="/learn"{mark("/learn")}>{t("nav.learn")}</a>
+    <a href="/practice"{mark("/practice")}>{t("nav.practice")}</a>
+    <a href="/ranking"{mark("/ranking")}>{t("nav.ranking")}</a>'''
 
     if u:
         admin_link = ''
         if is_admin(u):
-            admin_link = f'\n    <a href="/admin" style="color:#ffcc00; border-color:#ffcc00;"{mark("/admin")}>ADMIN</a>'
-        nav_right = f'''<a href="/frontend/account.html"{mark("/frontend/account.html")}>ACCOUNT ({u})</a>{admin_link}
-    <a href="/logout" style="color: #ff3030; border-color: #ff3030;">LOGOUT</a>
+            admin_link = f'\n    <a href="/admin" style="color:#ffcc00; border-color:#ffcc00;"{mark("/admin")}>{t("nav.admin")}</a>'
+        # Nav chrome (account/login/logout links) is always translated, even
+        # on /learn and /lesson routes. is_learning_route() only governs
+        # whether lesson/learn CONTENT stays untranslated (that content is
+        # stored per-language in the DB instead of going through t()) — the
+        # site navigation around it should still switch with the language.
+        nav_right = f'''<a href="/frontend/account.html"{mark("/frontend/account.html")}>{t("nav.account", username=u)}</a>{admin_link}
+    <a href="/logout" style="color: #ff3030; border-color: #ff3030;">{t("nav.logout")}</a>
+    {lang_switcher}
     {search_form}'''
     else:
-        nav_right = f'''<a href="/frontend/register.html"{mark("/frontend/register.html")}>REGISTER</a>
-    <a href="/frontend/login.html"{mark("/frontend/login.html")}>LOGIN</a>
+        nav_right = f'''<a href="/frontend/register.html"{mark("/frontend/register.html")}>{t("nav.register")}</a>
+    <a href="/frontend/login.html"{mark("/frontend/login.html")}>{t("nav.login")}</a>
+    {lang_switcher}
     {search_form}'''
 
     return f'''<div class="nav-left">
@@ -547,6 +591,33 @@ STATIC_EXTS = (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
                ".mp4", ".pdf", ".woff", ".woff2", ".map")
 
 @app.before_request
+def handle_lang_param():
+    """Handle optional ?lang= query param to set language cookie and redirect."""
+    lang_param = request.args.get('lang', '').lower()
+    if lang_param in {"en", "vi"}:
+        # Set cookie and redirect to same path without lang param
+        from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+        
+        parsed = urlparse(request.url)
+        query_dict = parse_qs(parsed.query)
+        query_dict.pop('lang', None)  # Remove lang param
+        
+        new_query = urlencode(query_dict, doseq=True) if query_dict else ''
+        new_url = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            new_query,
+            parsed.fragment
+        ))
+        
+        resp = redirect(new_url)
+        resp.set_cookie("lang", lang_param, max_age=31536000, samesite="Lax")
+        return resp
+    return None
+
+@app.before_request
 def enforce_account_ban():
     """A banned user keeps their session (so they see the ban message rather
     than just silently landing on a login screen) but every page they
@@ -562,7 +633,7 @@ def enforce_account_ban():
     if path.lower().endswith(STATIC_EXTS):
         return None
     if path.startswith("/api/"):
-        return jsonify({"success": False, "msg": "Your account has been banned."}), 403
+        return jsonify({"success": False, "msg": t("api.account_banned")}), 403
     return banned_page_html(u), 403
 
 @app.after_request
@@ -592,10 +663,23 @@ def inject_pending_alerts(resp):
 def ack_warning():
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Login required."}), 401
+        return jsonify({"success": False, "msg": t("api.login_required")}), 401
     with sqlite3.connect(DB_U) as c:
         c.execute("UPDATE users SET warning_message=NULL WHERE username=?", (u,))
     return jsonify({"success": True})
+
+@app.route("/api/set_language", methods=["POST"])
+def set_language():
+    """Set language preference via cookie."""
+    data = request.get_json()
+    lang = data.get("lang", "").lower() if data else ""
+    
+    if lang not in {"en", "vi"}:
+        return jsonify({"success": False, "msg": t("api.invalid_language")}), 400
+    
+    resp = jsonify({"success": True, "lang": lang})
+    resp.set_cookie("lang", lang, max_age=31536000, samesite="Lax")
+    return resp
 
 def build_pagination(current, total_pages, url_for_page):
     """Renders a page-number strip (\u00ab Prev  1 \u2026 4 [5] 6 \u2026 12  Next \u00bb  Page 5 of 12)
@@ -612,7 +696,7 @@ def build_pagination(current, total_pages, url_for_page):
         href = url_for_page(p) if not disabled else "#"
         return f'<a href="{href}" class="{classes}">{label}</a>'
 
-    parts = [link(max(1, current - 1), "\u00ab Prev", disabled=(current == 1))]
+    parts = [link(max(1, current - 1), t("pagination.prev"), disabled=(current == 1))]
 
     show = sorted({p for p in (1, total_pages, current - 1, current, current + 1) if 1 <= p <= total_pages})
     last = 0
@@ -622,8 +706,8 @@ def build_pagination(current, total_pages, url_for_page):
         parts.append(link(p, active=(p == current)))
         last = p
 
-    parts.append(link(min(total_pages, current + 1), "Next \u00bb", disabled=(current == total_pages)))
-    parts.append(f'<span class="page-info">Page {current} of {total_pages}</span>')
+    parts.append(link(min(total_pages, current + 1), t("pagination.next"), disabled=(current == total_pages)))
+    parts.append(f'<span class="page-info">{t("pagination.page_info", current=current, total=total_pages)}</span>')
     return "\n".join(parts)
 
 @app.route("/")
@@ -631,14 +715,20 @@ def build_pagination(current, total_pages, url_for_page):
 def mn():
     u = get_u()
     with open(os.path.join(D_R, "index.html"), "r", encoding="utf-8") as f: h = f.read()
-    return h.replace("{{nav}}", nav_html(u))
+    return h.replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("{{home.tagline}}", t("home.tagline"))\
+            .replace("{{home.about_heading}}", t("home.about_heading"))\
+            .replace("{{home.about_desc}}", t("home.about_desc"))\
+            .replace("{{home.footer_quote}}", t("home.footer_quote"))\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/api/leaderboard")
 def leaderboard():
     with sqlite3.connect(DB_U) as c:
         # Pull the COALESCE version
         top = c.execute("SELECT COALESCE(display_name, username), xp FROM users ORDER BY xp DESC LIMIT 10").fetchall()
-    return {"data": top}    
+    return {"data": top}
 
 @app.route("/login", methods=["POST"])
 def log():
@@ -660,7 +750,21 @@ def log():
 def show_login():
     with open(os.path.join(D_F, "login.html"), "r", encoding="utf-8") as f:
         h = f.read()
-    return h.replace("{{nav}}", nav_html(get_u()))
+    return h.replace("{{nav}}", nav_html(get_u()))\
+            .replace("{{lang}}", get_lang())\
+            .replace("{{login.header}}", t("auth.login.tagline"))\
+            .replace("{{login.heading}}", t("auth.login.heading"))\
+            .replace("{{login.username_label}}", t("auth.login.username_label"))\
+            .replace("{{login.username_placeholder}}", t("auth.login.username_placeholder"))\
+            .replace("{{login.password_label}}", t("auth.login.password_label"))\
+            .replace("{{login.password_placeholder}}", t("auth.login.password_placeholder"))\
+            .replace("{{login.submit_button}}", t("auth.login.submit"))\
+            .replace("{{login.back_home}}", t("auth.login.back_home"))\
+            .replace("{{login.error_both_required}}", t("auth.login.missing_fields"))\
+            .replace("{{login.success}}", t("auth.login.success"))\
+            .replace("{{login.error_invalid}}", t("auth.login.invalid_credentials"))\
+            .replace("{{login.error_connection}}", t("auth.login.server_error"))\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/frontend/register.html", methods=["GET", "POST"])
 # 1. This serves the registration page
@@ -668,7 +772,20 @@ def show_login():
 def show_register():
     with open(os.path.join(D_F, "register.html"), "r", encoding="utf-8") as f:
         h = f.read()
-    return h.replace("{{nav}}", nav_html(get_u()))
+    return h.replace("{{nav}}", nav_html(get_u()))\
+            .replace("{{lang}}", get_lang())\
+            .replace("{{register.header}}", t("auth.register.tagline"))\
+            .replace("{{register.heading}}", t("auth.register.heading"))\
+            .replace("{{register.username_label}}", t("auth.register.username_placeholder"))\
+            .replace("{{register.username_placeholder}}", t("auth.register.username_placeholder"))\
+            .replace("{{register.email_label}}", t("auth.register.email_placeholder"))\
+            .replace("{{register.email_placeholder}}", t("auth.register.email_placeholder"))\
+            .replace("{{register.password_label}}", t("auth.register.password_placeholder"))\
+            .replace("{{register.password_placeholder}}", t("auth.register.password_placeholder"))\
+            .replace("{{register.confirm_label}}", t("auth.register.confirm_placeholder"))\
+            .replace("{{register.confirm_placeholder}}", t("auth.register.confirm_placeholder"))\
+            .replace("{{register.submit_button}}", t("auth.register.submit"))\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 # 2. This handles the form submission (API)
 @app.route("/register", methods=["POST"])
@@ -683,25 +800,25 @@ def handle_register():
     # attributes) crashes with a TypeError from len(None) below instead of
     # returning a normal validation error.
     if not u or not p or not cp:
-        return jsonify({"success": False, "msg": "Username and password are required."}), 400
+        return jsonify({"success": False, "msg": t("api.register_username_password_required")}), 400
 
     # 1. Validation checks (Backend safety net)
     if p != cp:
-        return jsonify({"success": False, "msg": "Passwords do not match."}), 400
+        return jsonify({"success": False, "msg": t("api.register_passwords_mismatch")}), 400
     if not (5 <= len(u) <= 20):
-        return jsonify({"success": False, "msg": "Username must be 5-20 characters long."}), 400
+        return jsonify({"success": False, "msg": t("api.register_username_length")}), 400
     if not val_u(u):
-        return jsonify({"success": False, "msg": "Invalid username (letters, numbers, underscores only)."}), 400
+        return jsonify({"success": False, "msg": t("api.register_username_invalid")}), 400
     if len(p) <= 5:
-        return jsonify({"success": False, "msg": "Password too short (min 6 characters)."}), 400
+        return jsonify({"success": False, "msg": t("api.register_password_short")}), 400
 
     # 2. Database attempt
     try:
         with sqlite3.connect(DB_U) as c: 
             c.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (u, hash_password(p), e))
-        return jsonify({"success": True, "msg": "Registered successfully!"})
+        return jsonify({"success": True, "msg": t("api.register_success")})
     except sqlite3.IntegrityError:
-        return jsonify({"success": False, "msg": "Username already exists."}), 400
+        return jsonify({"success": False, "msg": t("api.register_username_exists")}), 400
 
 # Markers in account.html bracket the settings button and settings modal+
 # script so the same template can serve both the editable "my account" page
@@ -885,10 +1002,10 @@ def render_profile_page(target_username, viewer_username, show_settings, tab="su
     if tab == "blog":
         r_sec_content = build_account_blog_tab(target_username, is_owner=show_settings, page=page, base_path=base_path)
     else:
-        r_sec_content = f'''<h2>SOLVED PROBLEMS</h2>
+        r_sec_content = f'''<h2>{t("account.solved_heading")}</h2>
         <div class="tbl-wrap">
             <table>
-                <thead><tr><th>ID</th><th>Title</th><th>XP</th></tr></thead>
+                <thead><tr><th>{t("account.col_id")}</th><th>{t("account.col_title")}</th><th>{t("account.col_xp")}</th></tr></thead>
                 <tbody>{tr}</tbody>
             </table>
         </div>'''
@@ -927,7 +1044,9 @@ def render_profile_page(target_username, viewer_username, show_settings, tab="su
             .replace("{{code_pct}}", str(code_pct))\
             .replace("{{code_solved}}", str(solved_code))\
             .replace("{{code_total}}", str(total_code))\
-            .replace("{{nav}}", nav_html(viewer_username))
+            .replace("{{nav}}", nav_html(viewer_username))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/frontend/account.html")
 def acc():
@@ -971,12 +1090,12 @@ def user_search():
     rows = build_search_results_html(q)
     with open(os.path.join(D_F, "search.html"), "r", encoding="utf-8") as f:
         h = f.read()
-    return h.replace("{{q}}", q).replace("{{rows}}", rows).replace("{{nav}}", nav_html(u))
+    return h.replace("{{q}}", q).replace("{{rows}}", rows).replace("{{nav}}", nav_html(u)).replace("{{lang}}", get_lang())
 
 @app.route("/api/update_profile", methods=["POST"])
 def update_profile():
     u = get_u()
-    if not u: return {"success": False, "msg": "Login required"}
+    if not u: return {"success": False, "msg": t("api.login_required")}
     
     data = request.json
     old_p = data.get("old_password")
@@ -987,7 +1106,7 @@ def update_profile():
     with sqlite3.connect(DB_U) as c:
         db_p = c.execute("SELECT password FROM users WHERE username=?", (u,)).fetchone()[0]
         if not verify_password(db_p, old_p):
-            return {"success": False, "msg": "Incorrect old password."}
+            return {"success": False, "msg": t("api.profile_wrong_password")}
         
         if new_dname and new_dname.strip():
             c.execute("UPDATE users SET display_name = ? WHERE username = ?", (new_dname.strip(), u))
@@ -1003,7 +1122,7 @@ def update_profile():
             # plaintext one matches — upgrade it to a hash while we're here.
             c.execute("UPDATE users SET password = ? WHERE username = ?", (hash_password(old_p), u))
             
-    return {"success": True, "msg": "Profile updated successfully!"}
+    return {"success": True, "msg": t("api.profile_updated")}
 
 @app.route("/frontend/ranking.html")
 def rnk():
@@ -1023,15 +1142,19 @@ def rnk():
                  f"<td>{rank_badge_html(rank_name, rank_color)}</td>"
                  f"<td>{lvl}</td><td>{xp}</td><td>{solved}</td></tr>")
     if not rows:
-        rows = "<tr><td colspan='6' style='text-align:center;'>No users found.</td></tr>"
+        rows = f"<tr><td colspan='6' style='text-align:center;'>{t('ranking.no_users')}</td></tr>"
 
     return h.replace("{{rows}}", rows)\
             .replace("{{pagination}}", "")\
-            .replace("{{nav}}", nav_html(get_u()))
+            .replace("{{nav}}", nav_html(get_u()))\
+            .replace("{{lang}}", get_lang())
 
 PROBLEMS_PER_PAGE = 15
 
-TYPE_LABELS = {"answer": "ANSWER", "code": "CODE"}
+def get_type_labels():
+    """Return translated problem type labels. Must be called within request context."""
+    return {"answer": t("problem.type.answer"), "code": t("problem.type.code")}
+
 TYPE_CLASSES = {"answer": "type-answer", "code": "type-code"}
 VALID_PROB_TYPES = {"answer", "code"}
 VALID_SORTS = {"id", "title", "solved"}
@@ -1101,8 +1224,11 @@ def practice_page():
         is_solved = m_id_str in solved_ids
         prob_type = (prob_type or "answer").lower()
 
+        # Translate title if available
+        translated_title = t_problem(m_id_str, "title") or title
+
         status_icon = "✅ " if is_solved else ""
-        type_label = TYPE_LABELS.get(prob_type, "ANSWER")
+        type_label = get_type_labels().get(prob_type, "ANSWER")
         type_cls = TYPE_CLASSES.get(prob_type, "type-answer")
 
         # Official/user solutions only make sense for code-type problems.
@@ -1125,7 +1251,7 @@ def practice_page():
         table_rows += f"""
         <tr style="border-bottom: 1px solid rgba(128, 128, 128, 0.2);">
             <td style="padding: 15px 10px;">{m_id}</td>
-            <td style="padding: 15px 10px;">{status_icon}<a href="/problem/{m_id}"><strong>{title}</strong></a></td>
+            <td style="padding: 15px 10px;">{status_icon}<a href="/problem/{m_id}"><strong>{translated_title}</strong></a></td>
             <td style="padding: 15px 10px; text-align:center;"><span class="prob-type-badge {type_cls}">{type_label}</span></td>
             <td style="padding: 15px 10px; text-align:center; position:relative;">
                 <span class="solved-count">{solved_by}</span>
@@ -1152,7 +1278,7 @@ def practice_page():
         start, end = offset + 1, min(offset + PROBLEMS_PER_PAGE, total)
         results_meta = f"Showing {start}-{end} of {total} problem{'s' if total != 1 else ''}"
         if q: results_meta += f' matching "{q}"'
-        if type_filter != "all": results_meta += f" \u00b7 {TYPE_LABELS.get(type_filter, type_filter.upper())} type"
+        if type_filter != "all": results_meta += f" \u00b7 {get_type_labels().get(type_filter, type_filter.upper())} type"
 
     clear_search = ""
     if q:
@@ -1163,24 +1289,24 @@ def practice_page():
         clear_search = f'<a href="{clear_href}" class="back-btn practice-clear-btn">Clear</a>'
 
     type_sidebar = ""
-    for key, label in (("all", "ALL"), ("answer", "ANSWER"), ("code", "CODE")):
+    for key, label_key in (("all", "practice.filter_all"), ("answer", "practice.type_answer"), ("code", "practice.type_code")):
         qs = {}
         if q: qs["q"] = q
         if key != "all": qs["type"] = key
         if sort != "id": qs["sort"] = sort
         href = "/practice" + (("?" + urlencode(qs)) if qs else "")
         active = " filter-link-active" if type_filter == key else ""
-        type_sidebar += f'<a href="{href}" class="filter-link{active}">{label}</a>\n'
+        type_sidebar += f'<a href="{href}" class="filter-link{active}">{t(label_key)}</a>\n'
 
     sort_sidebar = ""
-    for key, label in (("id", "DEFAULT"), ("title", "TITLE A-Z"), ("solved", "MOST SOLVED")):
+    for key, label_key in (("id", "practice.sort_default"), ("title", "practice.sort_title"), ("solved", "practice.sort_solved")):
         qs = {}
         if q: qs["q"] = q
         if type_filter != "all": qs["type"] = type_filter
         if key != "id": qs["sort"] = key
         href = "/practice" + (("?" + urlencode(qs)) if qs else "")
         active = " filter-link-active" if sort == key else ""
-        sort_sidebar += f'<a href="{href}" class="filter-link{active}">{label}</a>\n'
+        sort_sidebar += f'<a href="{href}" class="filter-link{active}">{t(label_key)}</a>\n'
 
     with open(os.path.join(D_F, "practice.html"), "r", encoding="utf-8") as f:
         h = f.read()
@@ -1194,18 +1320,20 @@ def practice_page():
             .replace("{{results_meta}}", results_meta)\
             .replace("{{type_sidebar}}", type_sidebar)\
             .replace("{{sort_sidebar}}", sort_sidebar)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/submit", methods=["POST"])
 def submit():
     u = get_u()
-    if not u: return {"success": False, "msg": "Login required"}
+    if not u: return {"success": False, "msg": t("api.login_required")}
     data = request.json or {}
     prob_id = data.get("id")
     user_ans = data.get("answer")
 
     if not prob_id or user_ans is None:
-        return {"success": False, "msg": "Missing problem id or answer."}
+        return {"success": False, "msg": t("api.submit_missing_fields")}
 
     with sqlite3.connect(DB_U) as c:
         # 1. Verify the problem exists and actually accepts plain-text answers.
@@ -1215,22 +1343,22 @@ def submit():
         # here directly and get marked solved without ever running real code.
         m = c.execute("SELECT answer, xp, type FROM initial_misions WHERE id=?", (prob_id,)).fetchone()
         if not m:
-            return {"success": False, "msg": "Problem not found."}
+            return {"success": False, "msg": t("api.problem_not_found")}
         if (m[2] or "answer").lower() != "answer":
-            return {"success": False, "msg": "This problem requires a code submission — use the code editor instead."}
+            return {"success": False, "msg": t("api.submit_requires_code")}
         if m[0] != user_ans:
-            return {"success": False, "msg": "Incorrect answer."}
+            return {"success": False, "msg": t("api.incorrect_answer")}
 
         # 2. Check if already solved
         already_solved = c.execute("SELECT 1 FROM solved_problems WHERE username=? AND problem_id=?", (u, prob_id)).fetchone()
         if already_solved:
-            return {"success": False, "msg": "Problem already solved!"}
+            return {"success": False, "msg": t("api.already_solved")}
 
         # 3. Award XP AND increment problems_solved
         c.execute("UPDATE users SET xp = xp + ?, problems_solved = problems_solved + 1 WHERE username=?", (m[1], u))
         c.execute("INSERT INTO solved_problems (username, problem_id) VALUES (?, ?)", (u, prob_id))
         
-        return {"success": True, "msg": f"Correct! +{m[1]} XP earned."}
+        return {"success": True, "msg": t("api.correct_xp").format(xp=m[1])}
 
 # ────────────────────────────────────
 # Code judge — compiles/runs a submission for a code-type problem and
@@ -1469,7 +1597,7 @@ def _run_sage_remote(code, stdin_data):
 def submit_code():
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Login required"}), 401
+        return jsonify({"success": False, "msg": t("api.login_required")}), 401
 
     data = request.json or {}
     prob_id = data.get("id")
@@ -1477,13 +1605,13 @@ def submit_code():
     code = data.get("code", "")
 
     if not prob_id:
-        return jsonify({"success": False, "msg": "Missing problem id."}), 400
+        return jsonify({"success": False, "msg": t("api.submit_missing_problem_id")}), 400
     if language not in CODE_LANGUAGES:
-        return jsonify({"success": False, "msg": "Unsupported language."}), 400
+        return jsonify({"success": False, "msg": t("api.unsupported_language")}), 400
     if not code.strip():
-        return jsonify({"success": False, "msg": "Please write some code before submitting."}), 400
+        return jsonify({"success": False, "msg": t("api.code_empty")}), 400
     if len(code) > CODE_MAX_LEN:
-        return jsonify({"success": False, "msg": f"Code is limited to {CODE_MAX_LEN} characters."}), 400
+        return jsonify({"success": False, "msg": t("api.code_too_long").format(max=CODE_MAX_LEN)}), 400
 
     with sqlite3.connect(DB_U) as c:
         m = c.execute(
@@ -1491,9 +1619,9 @@ def submit_code():
             (prob_id,)
         ).fetchone()
         if not m:
-            return jsonify({"success": False, "msg": "Problem not found."}), 404
+            return jsonify({"success": False, "msg": t("api.problem_not_found")}), 404
         if (m[2] or "answer").lower() != "code":
-            return jsonify({"success": False, "msg": "This problem doesn't accept code submissions."}), 400
+            return jsonify({"success": False, "msg": t("api.code_not_accepted")}), 400
 
         expected_output, xp_reward, _, test_input, judge_harness = m
 
@@ -1517,13 +1645,13 @@ def submit_code():
         verdict, stdout, stderr = run_code_submission(language, full_code, "")
 
         if verdict == "internal_error":
-            return jsonify({"success": False, "msg": stderr or "Internal judge error."}), 500
+            return jsonify({"success": False, "msg": stderr or t("api.judge_internal_error")}), 500
         if verdict == "compile_error":
-            return jsonify({"success": True, "verdict": "compile_error", "msg": "Compile Error.", "stdout": "", "stderr": stderr, "score": 0})
+            return jsonify({"success": True, "verdict": "compile_error", "msg": t("api.judge_compile_error"), "stdout": "", "stderr": stderr, "score": 0})
         if verdict == "runtime_error":
-            return jsonify({"success": True, "verdict": "runtime_error", "msg": "Runtime Error.", "stdout": stdout, "stderr": stderr, "score": 0})
+            return jsonify({"success": True, "verdict": "runtime_error", "msg": t("api.judge_runtime_error"), "stdout": stdout, "stderr": stderr, "score": 0})
         if verdict == "time_limit_exceeded":
-            return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": f"Time Limit Exceeded ({SAGE_TIME_LIMIT}s).", "stdout": "", "stderr": "", "score": 0})
+            return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": t("api.judge_tle").format(limit=SAGE_TIME_LIMIT), "stdout": "", "stderr": "", "score": 0})
 
         # verdict == "ok" -> parse the JUDGE_SCORE=NN line the harness printed
         score = 0
@@ -1551,39 +1679,39 @@ def submit_code():
                     c.execute("UPDATE users SET problems_solved = problems_solved + 1 WHERE username=?", (u,))
 
         if score == 100:
-            msg = "Accepted! All 5 testcases passed." if delta_xp == 0 else f"Accepted! +{delta_xp} XP earned."
+            msg = t("api.judge_accepted") if delta_xp == 0 else t("api.judge_accepted_xp").format(xp=delta_xp)
             return jsonify({"success": True, "verdict": "accepted", "msg": msg, "stdout": stdout, "stderr": stderr, "score": score})
         elif score > 0:
-            msg = f"Partial credit: {score}/100." if delta_xp == 0 else f"Partial credit: {score}/100 (+{delta_xp} XP)."
+            msg = t("api.judge_partial").format(score=score) if delta_xp == 0 else t("api.judge_partial_xp").format(score=score, xp=delta_xp)
             return jsonify({"success": True, "verdict": "partial", "msg": msg, "stdout": stdout, "stderr": stderr, "score": score})
         else:
-            return jsonify({"success": True, "verdict": "wrong_answer", "msg": "Wrong Answer — 0/100.", "stdout": stdout, "stderr": stderr, "score": 0})
+            return jsonify({"success": True, "verdict": "wrong_answer", "msg": t("api.judge_wrong_answer"), "stdout": stdout, "stderr": stderr, "score": 0})
 
     # ── Legacy path: single stdin/stdout test_input + answer, binary pass/fail ──
     verdict, stdout, stderr = run_code_submission(language, code, test_input or "")
 
     if verdict == "internal_error":
-        return jsonify({"success": False, "msg": stderr or "Internal judge error."}), 500
+        return jsonify({"success": False, "msg": stderr or t("api.judge_internal_error")}), 500
     if verdict == "compile_error":
-        return jsonify({"success": True, "verdict": "compile_error", "msg": "Compile Error.", "stdout": "", "stderr": stderr})
+        return jsonify({"success": True, "verdict": "compile_error", "msg": t("api.judge_compile_error"), "stdout": "", "stderr": stderr})
     if verdict == "runtime_error":
-        return jsonify({"success": True, "verdict": "runtime_error", "msg": "Runtime Error.", "stdout": stdout, "stderr": stderr})
+        return jsonify({"success": True, "verdict": "runtime_error", "msg": t("api.judge_runtime_error"), "stdout": stdout, "stderr": stderr})
     if verdict == "time_limit_exceeded":
-        return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": f"Time Limit Exceeded ({SAGE_TIME_LIMIT}s).", "stdout": "", "stderr": ""})
+        return jsonify({"success": True, "verdict": "time_limit_exceeded", "msg": t("api.judge_tle").format(limit=SAGE_TIME_LIMIT), "stdout": "", "stderr": ""})
 
     # verdict == "ok" -> program ran cleanly; now compare its output
     passed = stdout.strip() == (expected_output or "").strip()
     if not passed:
-        return jsonify({"success": True, "verdict": "wrong_answer", "msg": "Wrong Answer.", "stdout": stdout, "stderr": stderr})
+        return jsonify({"success": True, "verdict": "wrong_answer", "msg": t("api.judge_wrong_answer_simple"), "stdout": stdout, "stderr": stderr})
 
     if already_solved:
-        return jsonify({"success": True, "verdict": "accepted", "msg": "Accepted! (already solved — no extra XP)", "stdout": stdout, "stderr": stderr})
+        return jsonify({"success": True, "verdict": "accepted", "msg": t("api.judge_already_solved"), "stdout": stdout, "stderr": stderr})
 
     with sqlite3.connect(DB_U) as c:
         c.execute("UPDATE users SET xp = xp + ?, problems_solved = problems_solved + 1 WHERE username=?", (xp_reward, u))
         c.execute("INSERT INTO solved_problems (username, problem_id) VALUES (?, ?)", (u, prob_id))
 
-    return jsonify({"success": True, "verdict": "accepted", "msg": f"Accepted! +{xp_reward} XP earned.", "stdout": stdout, "stderr": stderr})
+    return jsonify({"success": True, "verdict": "accepted", "msg": t("api.judge_accepted_xp").format(xp=xp_reward), "stdout": stdout, "stderr": stderr})
 
 LESSONS_PER_PAGE = 6
 
@@ -1688,7 +1816,9 @@ def learn_page():
             .replace("{{clear_search}}", clear_search)\
             .replace("{{results_meta}}", results_meta)\
             .replace("{{pagination}}", pagination_html)\
-            .replace("{{diff_sidebar}}", diff_sidebar)
+            .replace("{{diff_sidebar}}", diff_sidebar)\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/lesson/<int:lesson_id>")
 def lesson_page(lesson_id):
@@ -1765,7 +1895,9 @@ def lesson_page(lesson_id):
             .replace("{{diff_label}}", diff_label)\
             .replace("{{content}}", content)\
             .replace("{{mathjax}}", mathjax_tag)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/ranking")
 def ranking_page():
@@ -1811,7 +1943,7 @@ def ranking_page():
         """
         
     if not rows_html:
-        rows_html = "<tr><td colspan='6' style='text-align:center;'>No users found.</td></tr>"
+        rows_html = f"<tr><td colspan='6' style='text-align:center;'>{t('ranking.no_users')}</td></tr>"
         
     # 3. Create Pagination Links
     total_pages = max(1, math.ceil(total_users / per_page))
@@ -1828,7 +1960,17 @@ def ranking_page():
         
     return h.replace("{{rows}}", rows_html)\
             .replace("{{pagination}}", pagination_html)\
-            .replace("{{nav}}", nav_html(get_u()))
+            .replace("{{nav}}", nav_html(get_u()))\
+            .replace("{{lang}}", get_lang())\
+            .replace("{{ranking.title}}", t("ranking.title"))\
+            .replace("{{ranking.tagline}}", t("ranking.tagline"))\
+            .replace("{{ranking.col_rank}}", t("ranking.col_rank"))\
+            .replace("{{ranking.col_user}}", t("ranking.col_user"))\
+            .replace("{{ranking.col_rank_name}}", t("ranking.col_rank_name"))\
+            .replace("{{ranking.col_level}}", t("ranking.col_level"))\
+            .replace("{{ranking.col_xp}}", t("ranking.col_xp"))\
+            .replace("{{ranking.col_solved}}", t("ranking.col_solved"))\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/frontend/ranking_snippet.html")
 def ranking_snippet():
@@ -1839,12 +1981,12 @@ def ranking_snippet():
     rows = ""
     for uname, name, xp, admin_flag in users:
         _, rank_color = get_rank_info(xp, bool(admin_flag))
-        rows += f"<tr><td>{colored_name_link_html(uname, name, rank_color)}</td><td>{xp} XP</td></tr>"
+        rows += f"<tr><td>{colored_name_link_html(uname, name, rank_color)}</td><td>{t('ranking_snippet.xp_value').format(xp=xp)}</td></tr>"
     
     return f"""
-    <h2>TOP USERS</h2>
+    <h2>{t('ranking_snippet.heading')}</h2>
     <table class="rank-table">
-        <tr><th>User</th><th>XP</th></tr>
+        <tr><th>{t('ranking_snippet.user_col')}</th><th>{t('ranking_snippet.xp_col')}</th></tr>
         {rows}
     </table>
     """
@@ -1892,7 +2034,11 @@ def problem_page(id):
     # 3. Prepare display status
     status_msg = "✅ Solved" if solved else "❌ Not Solved"
 
-    # 4. Inject all variables safely
+    # 4. Translate problem title and statement if available
+    translated_title = t_problem(id, "title") or m[0]
+    translated_statement = t_problem(id, "statement") or m[2]
+
+    # 5. Inject all variables safely
     prob_type = (m[3] or "answer").lower()
     type_display = {"answer": "📝 ANSWER", "code": "💻 CODE"}.get(prob_type, "📝 ANSWER")
 
@@ -1913,13 +2059,15 @@ def problem_page(id):
     return h.replace("{{id}}", str(id))\
             .replace("{{u}}", str(dname))\
             .replace("{{avatar}}", str(av))\
-            .replace("{{t}}", str(m[0]))\
+            .replace("{{t}}", str(translated_title))\
             .replace("{{xp}}", str(m[1]))\
-            .replace("{{stmt}}", str(m[2]))\
+            .replace("{{stmt}}", str(translated_statement))\
             .replace("{{type}}", type_display)\
             .replace("{{status}}", status_msg)\
             .replace("{{starter_code_js}}", starter_code_js)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 DEFAULT_AVATAR = "https://thumbs.dreamstime.com/b/binary-code-matrix-background-digital-technology-vector-computer-data-green-numbers-pattern-streams-zero-one-digits-182437658.jpg"
 
@@ -2003,41 +2151,45 @@ def problem_solution_page(id):
     if (prob_type or "answer").lower() != "code":
         return "404 — Solutions are only available for code-type problems.", 404
 
+    # Translate title if available
+    translated_title = t_problem(id, "title") or title
+
     edit_btn, body, edit_modal = solution_page_content(id, official_solution, official_lang, is_admin(u))
 
     with open(os.path.join(D_F, "solution.html"), "r", encoding="utf-8") as f:
         h = f.read()
 
     return h.replace("{{id}}", str(id))\
-            .replace("{{title}}", html.escape(title))\
+            .replace("{{title}}", html.escape(translated_title))\
             .replace("{{edit_btn}}", edit_btn)\
             .replace("{{content_html}}", body)\
             .replace("{{edit_modal}}", edit_modal)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())
 
 @app.route("/api/problem/<id>/solution", methods=["POST"])
 def save_official_solution(id):
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
 
     data = request.json or {}
     language = (data.get("language") or "sage").lower()
     if language not in VALID_SOLUTION_LANGS:
-        return jsonify({"success": False, "msg": "Invalid language."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_language")}), 400
     content = (data.get("content") or "").strip()
     if len(content) > SOLUTION_CODE_MAX:
-        return jsonify({"success": False, "msg": f"Solution is limited to {SOLUTION_CODE_MAX} characters."}), 400
+        return jsonify({"success": False, "msg": t("api.solution_too_long").format(max=SOLUTION_CODE_MAX)}), 400
 
     with sqlite3.connect(DB_U) as c:
         m = c.execute("SELECT type FROM initial_misions WHERE id=?", (id,)).fetchone()
         if not m:
-            return jsonify({"success": False, "msg": "Problem not found."}), 404
+            return jsonify({"success": False, "msg": t("api.problem_not_found")}), 404
         if (m[0] or "answer").lower() != "code":
-            return jsonify({"success": False, "msg": "Solutions are only available for code-type problems."}), 400
+            return jsonify({"success": False, "msg": t("api.solution_code_only")}), 400
         c.execute("UPDATE initial_misions SET official_solution=?, official_solution_lang=? WHERE id=?", (content, language, id))
 
-    return jsonify({"success": True, "msg": "Official solution saved."})
+    return jsonify({"success": True, "msg": t("api.solution_saved")})
 
 def solution_submit_modal_html(problem_id):
     """'Submit a Solution' button + modal (language tabs, code textarea with a
@@ -2165,6 +2317,9 @@ def problem_user_solutions_page(id):
                     (u, *all_ids)
                 ).fetchall()}
 
+    # Translate title if available
+    translated_title = t_problem(id, "title") or title
+
     if u:
         if my_solutions:
             my_cards = ""
@@ -2207,34 +2362,36 @@ def problem_user_solutions_page(id):
         h = f.read()
 
     return h.replace("{{id}}", str(id))\
-            .replace("{{title}}", html.escape(title))\
+            .replace("{{title}}", html.escape(translated_title))\
             .replace("{{submit_area}}", submit_area)\
             .replace("{{my_solutions}}", my_section)\
             .replace("{{lang_sections}}", lang_sections)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/api/solutions/<problem_id>", methods=["POST"])
 def submit_user_solution(problem_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to submit a solution."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_submit_solution")}), 401
 
     with sqlite3.connect(DB_U) as c:
         m = c.execute("SELECT type FROM initial_misions WHERE id=?", (problem_id,)).fetchone()
         if not m:
-            return jsonify({"success": False, "msg": "Problem not found."}), 404
+            return jsonify({"success": False, "msg": t("api.problem_not_found")}), 404
         if (m[0] or "answer").lower() != "code":
-            return jsonify({"success": False, "msg": "Solutions are only available for code-type problems."}), 400
+            return jsonify({"success": False, "msg": t("api.solution_code_only")}), 400
 
     data = request.json or {}
     language = (data.get("language") or "").lower()
     if language not in VALID_SOLUTION_LANGS:
-        return jsonify({"success": False, "msg": "Invalid language."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_language")}), 400
     code = (data.get("code") or "").strip()
     if not code:
-        return jsonify({"success": False, "msg": "Solution code can't be empty."}), 400
+        return jsonify({"success": False, "msg": t("api.solution_code_empty")}), 400
     if len(code) > SOLUTION_CODE_MAX:
-        return jsonify({"success": False, "msg": f"Solution is limited to {SOLUTION_CODE_MAX} characters."}), 400
+        return jsonify({"success": False, "msg": t("api.solution_too_long").format(max=SOLUTION_CODE_MAX)}), 400
     is_public = 1 if data.get("is_public", True) else 0
 
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2244,20 +2401,20 @@ def submit_user_solution(problem_id):
             (problem_id, u, language, code, is_public, created_at)
         )
 
-    return jsonify({"success": True, "msg": "Solution submitted!"})
+    return jsonify({"success": True, "msg": t("api.solution_submitted")})
 
 @app.route("/api/solutions/<int:solution_id>/vote", methods=["POST"])
 def vote_user_solution(solution_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to vote."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_vote")}), 401
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT username FROM user_solutions WHERE id=?", (solution_id,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "Solution not found."}), 404
+            return jsonify({"success": False, "msg": t("api.solution_not_found")}), 404
         if row[0] == u:
-            return jsonify({"success": False, "msg": "You can't vote on your own solution."}), 400
+            return jsonify({"success": False, "msg": t("api.vote_own_solution")}), 400
 
         existing = c.execute(
             "SELECT 1 FROM user_solution_votes WHERE solution_id=? AND username=?", (solution_id, u)
@@ -2314,11 +2471,11 @@ def get_comments(problem_id):
 def post_comment(problem_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to comment."}), 401
+        return jsonify({"success": False, "msg": t("comments.login_prompt")}), 401
 
     with sqlite3.connect(DB_U) as c:
         if not c.execute("SELECT 1 FROM initial_misions WHERE id=?", (problem_id,)).fetchone():
-            return jsonify({"success": False, "msg": "Problem not found."}), 404
+            return jsonify({"success": False, "msg": t("api.problem_not_found")}), 404
 
     data = request.json or {}
     content, err = moderate_comment(data.get("content", ""))
@@ -2355,20 +2512,20 @@ def post_comment(problem_id):
 def vote_comment():
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to vote."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_vote")}), 401
 
     data = request.json or {}
     try:
         comment_id = int(data.get("comment_id"))
         vote = int(data.get("vote"))
     except (TypeError, ValueError):
-        return jsonify({"success": False, "msg": "Invalid vote."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_vote")}), 400
     if vote not in (1, -1):
-        return jsonify({"success": False, "msg": "Invalid vote."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_vote")}), 400
 
     with sqlite3.connect(DB_U) as c:
         if not c.execute("SELECT 1 FROM comments WHERE id=?", (comment_id,)).fetchone():
-            return jsonify({"success": False, "msg": "Comment not found."}), 404
+            return jsonify({"success": False, "msg": t("api.comment_not_found")}), 404
 
         existing = c.execute(
             "SELECT vote FROM comment_votes WHERE comment_id=? AND username=?", (comment_id, u)
@@ -2397,14 +2554,14 @@ def vote_comment():
 def delete_comment(comment_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in."}), 401
+        return jsonify({"success": False, "msg": t("api.login_generic")}), 401
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT username FROM comments WHERE id=?", (comment_id,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "Comment not found."}), 404
+            return jsonify({"success": False, "msg": t("api.comment_not_found")}), 404
         if row[0] != u:
-            return jsonify({"success": False, "msg": "You can only delete your own comments."}), 403
+            return jsonify({"success": False, "msg": t("api.delete_own_comments_only")}), 403
         c.execute("DELETE FROM comments WHERE id=?", (comment_id,))
         c.execute("DELETE FROM comment_votes WHERE comment_id=?", (comment_id,))
 
@@ -2414,7 +2571,7 @@ def delete_comment(comment_id):
 def report_comment(comment_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to report a comment."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_report")}), 401
 
     data = request.json or {}
     reason = (data.get("reason") or "").strip()[:300]
@@ -2422,9 +2579,9 @@ def report_comment(comment_id):
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT username FROM comments WHERE id=?", (comment_id,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "Comment not found."}), 404
+            return jsonify({"success": False, "msg": t("api.comment_not_found")}), 404
         if row[0] == u:
-            return jsonify({"success": False, "msg": "You can't report your own comment."}), 400
+            return jsonify({"success": False, "msg": t("api.cant_report_own")}), 400
 
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
@@ -2433,7 +2590,7 @@ def report_comment(comment_id):
                 (comment_id, u, reason, created_at)
             )
         except sqlite3.IntegrityError:
-            return jsonify({"success": False, "msg": "You've already reported this comment."}), 400
+            return jsonify({"success": False, "msg": t("api.already_reported")}), 400
 
     return jsonify({"success": True, "msg": "Thanks — this comment has been reported for review."})
 
@@ -2462,9 +2619,9 @@ def admin_page_html(u):
 
     <main>
         <section class="window">
-            <h2>REPORTED COMMENTS</h2>
-            <p style="opacity:0.75; margin-bottom:16px;">Comments flagged by users appear here for review.
-            Dismiss clears the flag and keeps the comment; Delete removes it permanently.</p>
+            <h2>REPORTED CONTENT</h2>
+            <p style="opacity:0.75; margin-bottom:16px;">Comments and blog posts flagged by users appear here for review.
+            Dismiss clears the flag and keeps the item; Delete removes it permanently.</p>
             <div id="admin-reports-list">
                 <p class="comment-empty">Loading reports…</p>
             </div>
@@ -2481,14 +2638,21 @@ def admin_page_html(u):
             card.style.flexDirection = 'column';
             card.style.alignItems = 'stretch';
 
+            const itemId = r.type === 'blog_post' ? r.post_id : r.comment_id;
+            const linkHref = r.type === 'comment' ? `/problem/${{r.problem_id}}` : `/blog/${{r.post_id}}`;
+            const linkLabel = r.type === 'comment' ? 'View problem →' : 'View post →';
+            const label = r.type === 'comment' ? `comment #${{r.comment_id}}`
+                        : r.type === 'blog_comment' ? `blog comment #${{r.comment_id}}`
+                        : `blog post #${{r.post_id}}`;
+
             const meta = document.createElement('div');
             meta.className = 'comment-meta';
             const author = document.createElement('span');
             author.className = 'comment-author';
-            author.textContent = `${{r.author}} · comment #${{r.comment_id}}`;
+            author.textContent = `${{r.author}} · ${{label}}`;
             const link = document.createElement('a');
-            link.href = `/problem/${{r.problem_id}}`;
-            link.textContent = 'View problem →';
+            link.href = linkHref;
+            link.textContent = linkLabel;
             link.style.marginLeft = 'auto';
             link.style.color = '#00ccff';
             meta.appendChild(author);
@@ -2514,7 +2678,7 @@ def admin_page_html(u):
             dismissBtn.type = 'button';
             dismissBtn.className = 'back-btn';
             dismissBtn.textContent = 'Dismiss';
-            dismissBtn.addEventListener('click', () => resolve(r.comment_id, 'dismiss', card));
+            dismissBtn.addEventListener('click', () => resolve(itemId, r.type, 'dismiss', card));
 
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
@@ -2522,9 +2686,9 @@ def admin_page_html(u):
             deleteBtn.style.minHeight = '44px';
             deleteBtn.style.padding = '10px 20px';
             deleteBtn.style.fontSize = '1rem';
-            deleteBtn.textContent = 'Delete Comment';
+            deleteBtn.textContent = r.type === 'blog_post' ? 'Delete Post' : 'Delete Comment';
             deleteBtn.addEventListener('click', () => {{
-                if (confirm('Permanently delete this comment?')) resolve(r.comment_id, 'delete', card);
+                if (confirm('Permanently delete this?')) resolve(itemId, r.type, 'delete', card);
             }});
 
             btnRow.appendChild(dismissBtn);
@@ -2537,12 +2701,12 @@ def admin_page_html(u):
             return card;
         }}
 
-        async function resolve(commentId, action, card) {{
+        async function resolve(itemId, type, action, card) {{
             try {{
-                const res = await fetch(`/api/admin/reports/${{commentId}}/resolve`, {{
+                const res = await fetch(`/api/admin/reports/${{itemId}}/resolve`, {{
                     method: 'POST',
                     headers: {{'Content-Type': 'application/json'}},
-                    body: JSON.stringify({{ action }})
+                    body: JSON.stringify({{ action, type }})
                 }});
                 const data = await res.json();
                 if (data.success) {{
@@ -2591,9 +2755,19 @@ def admin_page():
 def admin_reports():
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
 
+    def parse_detail(detail):
+        items = []
+        if detail:
+            for part in detail.split('||'):
+                rep_user, _, rep_reason = part.partition(':')
+                items.append({"reporter": rep_user, "reason": rep_reason})
+        return items
+
+    reports = []
     with sqlite3.connect(DB_U) as c:
+        # Reports on problem-page comments
         rows = c.execute("""
             SELECT cm.id, cm.problem_id, cm.username, cm.content, cm.created_at, cm.score,
                    COUNT(cr.id) as report_count,
@@ -2604,44 +2778,105 @@ def admin_reports():
             GROUP BY cm.id
             ORDER BY report_count DESC, cm.id DESC
         """).fetchall()
+        for cid, pid, author, content, created_at, score, rcount, detail in rows:
+            reports.append({
+                "type": "comment",
+                "comment_id": cid,
+                "problem_id": pid,
+                "author": author,
+                "content": content,
+                "created_at": created_at,
+                "score": score,
+                "report_count": rcount,
+                "reports": parse_detail(detail),
+            })
 
-    reports = []
-    for cid, pid, author, content, created_at, score, rcount, detail in rows:
-        report_items = []
-        if detail:
-            for part in detail.split('||'):
-                rep_user, _, rep_reason = part.partition(':')
-                report_items.append({"reporter": rep_user, "reason": rep_reason})
-        reports.append({
-            "comment_id": cid,
-            "problem_id": pid,
-            "author": author,
-            "content": content,
-            "created_at": created_at,
-            "score": score,
-            "report_count": rcount,
-            "reports": report_items,
-        })
+        # Reports on blog comments (previously never surfaced to admins)
+        rows = c.execute("""
+            SELECT bc.id, bc.post_id, bc.username, bc.content, bc.created_at,
+                   COUNT(bcr.id) as report_count,
+                   GROUP_CONCAT(bcr.reporter_username || ':' || COALESCE(bcr.reason,''), '||')
+            FROM blog_comment_reports bcr
+            JOIN blog_comments bc ON bc.id = bcr.comment_id
+            WHERE bcr.resolved = 0
+            GROUP BY bc.id
+            ORDER BY report_count DESC, bc.id DESC
+        """).fetchall()
+        for cid, pid, author, content, created_at, rcount, detail in rows:
+            reports.append({
+                "type": "blog_comment",
+                "comment_id": cid,
+                "post_id": pid,
+                "author": author,
+                "content": content,
+                "created_at": created_at,
+                "score": None,
+                "report_count": rcount,
+                "reports": parse_detail(detail),
+            })
+
+        # Reports on blog posts (previously never surfaced to admins)
+        rows = c.execute("""
+            SELECT bp.id, bp.username, bp.title, bp.content, bp.created_at, bp.score,
+                   COUNT(bpr.id) as report_count,
+                   GROUP_CONCAT(bpr.reporter_username || ':' || COALESCE(bpr.reason,''), '||')
+            FROM blog_post_reports bpr
+            JOIN blog_posts bp ON bp.id = bpr.post_id
+            WHERE bpr.resolved = 0
+            GROUP BY bp.id
+            ORDER BY report_count DESC, bp.id DESC
+        """).fetchall()
+        for pid, author, title, content, created_at, score, rcount, detail in rows:
+            reports.append({
+                "type": "blog_post",
+                "post_id": pid,
+                "author": author,
+                "content": f"{title}: {content}",
+                "created_at": created_at,
+                "score": score,
+                "report_count": rcount,
+                "reports": parse_detail(detail),
+            })
+
+    reports.sort(key=lambda r: r["report_count"], reverse=True)
     return jsonify({"reports": reports})
 
-@app.route("/api/admin/reports/<int:comment_id>/resolve", methods=["POST"])
-def admin_resolve_report(comment_id):
+@app.route("/api/admin/reports/<int:item_id>/resolve", methods=["POST"])
+def admin_resolve_report(item_id):
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
 
     data = request.json or {}
     action = data.get("action")
+    report_type = data.get("type", "comment")
     if action not in ("dismiss", "delete"):
-        return jsonify({"success": False, "msg": "Invalid action."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_action")}), 400
+    if report_type not in ("comment", "blog_comment", "blog_post"):
+        return jsonify({"success": False, "msg": t("api.invalid_action")}), 400
 
     with sqlite3.connect(DB_U) as c:
-        if action == "delete":
-            c.execute("DELETE FROM comments WHERE id=?", (comment_id,))
-            c.execute("DELETE FROM comment_votes WHERE comment_id=?", (comment_id,))
-            c.execute("DELETE FROM comment_reports WHERE comment_id=?", (comment_id,))
-        else:
-            c.execute("UPDATE comment_reports SET resolved=1 WHERE comment_id=?", (comment_id,))
+        if report_type == "comment":
+            if action == "delete":
+                c.execute("DELETE FROM comments WHERE id=?", (item_id,))
+                c.execute("DELETE FROM comment_votes WHERE comment_id=?", (item_id,))
+                c.execute("DELETE FROM comment_reports WHERE comment_id=?", (item_id,))
+            else:
+                c.execute("UPDATE comment_reports SET resolved=1 WHERE comment_id=?", (item_id,))
+        elif report_type == "blog_comment":
+            if action == "delete":
+                c.execute("DELETE FROM blog_comments WHERE id=?", (item_id,))
+                c.execute("DELETE FROM blog_comment_reports WHERE comment_id=?", (item_id,))
+            else:
+                c.execute("UPDATE blog_comment_reports SET resolved=1 WHERE comment_id=?", (item_id,))
+        else:  # blog_post
+            if action == "delete":
+                c.execute("DELETE FROM blog_posts WHERE id=?", (item_id,))
+                c.execute("DELETE FROM blog_votes WHERE post_id=?", (item_id,))
+                c.execute("DELETE FROM blog_comments WHERE post_id=?", (item_id,))
+                c.execute("DELETE FROM blog_post_reports WHERE post_id=?", (item_id,))
+            else:
+                c.execute("UPDATE blog_post_reports SET resolved=1 WHERE post_id=?", (item_id,))
 
     return jsonify({"success": True})
 
@@ -2650,55 +2885,55 @@ def admin_resolve_report(comment_id):
 def admin_toggle_ban(username):
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
 
     data = request.json or {}
     action = data.get("action")
     if action not in ("ban", "unban"):
-        return jsonify({"success": False, "msg": "Invalid action."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_action")}), 400
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT is_admin FROM users WHERE username=?", (username,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "User not found."}), 404
+            return jsonify({"success": False, "msg": t("api.user_not_found")}), 404
         if row[0]:
-            return jsonify({"success": False, "msg": "Admin accounts can't be banned."}), 400
+            return jsonify({"success": False, "msg": t("api.admin_cannot_ban")}), 400
         c.execute("UPDATE users SET is_banned=? WHERE username=?", (1 if action == "ban" else 0, username))
 
-    msg = f"{username} has been banned." if action == "ban" else f"{username} has been unbanned."
+    msg = t("api.user_banned").format(username=username) if action == "ban" else t("api.user_unbanned").format(username=username)
     return jsonify({"success": True, "msg": msg})
 
 @app.route("/api/admin/users/<username>/warn", methods=["POST"])
 def admin_warn_user(username):
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
 
     data = request.json or {}
     message = (data.get("message") or "").strip()
     if not message:
-        return jsonify({"success": False, "msg": "Warning message can't be empty."}), 400
+        return jsonify({"success": False, "msg": t("api.warning_empty")}), 400
     if len(message) > 1000:
-        return jsonify({"success": False, "msg": "Warning message is limited to 1000 characters."}), 400
+        return jsonify({"success": False, "msg": t("api.warning_too_long")}), 400
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT is_admin FROM users WHERE username=?", (username,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "User not found."}), 404
+            return jsonify({"success": False, "msg": t("api.user_not_found")}), 404
         if row[0]:
-            return jsonify({"success": False, "msg": "Admin accounts can't be warned."}), 400
+            return jsonify({"success": False, "msg": t("api.admin_cannot_warn")}), 400
         c.execute("UPDATE users SET warning_message=? WHERE username=?", (message, username))
 
-    return jsonify({"success": True, "msg": f"Warning sent to {username} — they'll see it on their next page load."})
+    return jsonify({"success": True, "msg": t("api.warning_sent").format(username=username)})
 
 @app.route("/api/admin/users/<username>/clear_warning", methods=["POST"])
 def admin_clear_warning(username):
     u = get_u()
     if not u or not is_admin(u):
-        return jsonify({"success": False, "msg": "Admin access required."}), 403
+        return jsonify({"success": False, "msg": t("api.admin_required")}), 403
     with sqlite3.connect(DB_U) as c:
         c.execute("UPDATE users SET warning_message=NULL WHERE username=?", (username,))
-    return jsonify({"success": True, "msg": "Warning cleared."})
+    return jsonify({"success": True, "msg": t("api.warning_cleared")})
 
 #DELETE TS BELOW WHEN LAUNCHING THE WEB
 
@@ -2710,15 +2945,15 @@ def promote_admin():
     consider removing/blocking this route once your admin account exists."""
     data = request.json or {}
     if data.get("secret") != ADMIN_SECRET:
-        return jsonify({"success": False, "msg": "Invalid secret."}), 403
+        return jsonify({"success": False, "msg": t("api.invalid_secret")}), 403
 
     target = (data.get("username") or "").strip()
     with sqlite3.connect(DB_U) as c:
         if not c.execute("SELECT 1 FROM users WHERE username=?", (target,)).fetchone():
-            return jsonify({"success": False, "msg": "User not found."}), 404
+            return jsonify({"success": False, "msg": t("api.user_not_found")}), 404
         c.execute("UPDATE users SET is_admin=1 WHERE username=?", (target,))
 
-    return jsonify({"success": True, "msg": f"{target} is now an admin."})
+    return jsonify({"success": True, "msg": t("api.admin_promoted").format(username=target)})
 
 #=============================================================================#
 
@@ -2730,11 +2965,16 @@ BLOG_DESC_MAX = 300
 BLOG_CONTENT_MAX = 5000
 BLOG_PER_PAGE = 12
 
-BLOG_GUIDELINES_HTML = f'''<div class="comment-guidelines">
-    <strong>Posting Guidelines:</strong> Be respectful — no harassment, hate speech, or spam.
-    Don't post personal information (emails, phone numbers, or anyone's real contact details).
-    Title max {BLOG_TITLE_MAX} characters, description max {BLOG_DESC_MAX} characters,
-    full post max {BLOG_CONTENT_MAX} characters. Posts that break these rules are rejected automatically.
+def get_blog_guidelines_html():
+    """Return translated blog guidelines HTML. Must be called within request context."""
+    guidelines = t("blog.guidelines", title_max=BLOG_TITLE_MAX, desc_max=BLOG_DESC_MAX, content_max=BLOG_CONTENT_MAX)
+    parts = guidelines.split(": ", 1)
+    if len(parts) == 2:
+        title, content = parts
+    else:
+        title, content = guidelines, ""
+    return f'''<div class="comment-guidelines">
+    <strong>{title}:</strong> {content}
 </div>'''
 
 def moderate_blog_field(text, max_len, field_label):
@@ -2743,19 +2983,19 @@ def moderate_blog_field(text, max_len, field_label):
     each have their own limit."""
     text = (text or "").strip()
     if not text:
-        return None, f"{field_label} can't be empty."
+        return None, t("api.blog_field_empty").format(field=field_label)
     if len(text) > max_len:
-        return None, f"{field_label} is limited to {max_len} characters."
+        return None, t("api.blog_field_too_long").format(field=field_label, max=max_len)
 
     lowered = text.lower()
     for w in BAD_WORDS:
         if re.search(rf'\b{re.escape(w)}\b', lowered):
-            return None, "Please keep posts respectful — that language isn't allowed here."
+            return None, t("api.blog_profanity")
 
     if EMAIL_RE.search(text):
-        return None, "For your privacy and safety, please don't post email addresses."
+        return None, t("api.blog_no_email")
     if PHONE_RE.search(text):
-        return None, "For your privacy and safety, please don't post phone numbers."
+        return None, t("api.blog_no_phone")
 
     return text, None
 
@@ -2793,9 +3033,9 @@ def render_blog_card(post_id, username, dname, rank_color, title, description, c
     down_active = " active" if user_vote == -1 else ""
     return f'''<div class="comment-item blog-card">
     <div class="comment-vote blog-vote" data-post-id="{post_id}">
-        <button type="button" class="vote-btn vote-up{up_active}" data-vote="1" aria-label="Upvote post">▲</button>
+        <button type="button" class="vote-btn vote-up{up_active}" data-vote="1" aria-label="{t('blog.upvote_aria')}">▲</button>
         <span class="vote-score">{score}</span>
-        <button type="button" class="vote-btn vote-down{down_active}" data-vote="-1" aria-label="Downvote post">▼</button>
+        <button type="button" class="vote-btn vote-down{down_active}" data-vote="-1" aria-label="{t('blog.downvote_aria')}">▼</button>
     </div>
     <div class="comment-body">
         <a href="/blog/{post_id}" class="blog-title-link">{html.escape(title)}</a>
@@ -2804,7 +3044,7 @@ def render_blog_card(post_id, username, dname, rank_color, title, description, c
             <span class="comment-time">{time_ago(created_at)}</span>
         </div>
         <p class="comment-text blog-desc">{html.escape(description)}</p>
-        <a href="/blog/{post_id}" class="back-btn blog-view-full">View Full &amp; Comments →</a>
+        <a href="/blog/{post_id}" class="back-btn blog-view-full">{t('blog.view_full')}</a>
     </div>
 </div>'''
 
@@ -2813,27 +3053,27 @@ def blog_composer_html():
     length-capped) + its open/close/submit script. Plain string with token
     replacement rather than an f-string, since the embedded JS is full of
     literal braces that would otherwise need escaping."""
-    tpl = '''<button type="button" class="back-btn blog-new-post-btn" onclick="openPostModal()">+ New Post</button>
+    tpl = '''<button type="button" class="back-btn blog-new-post-btn" onclick="openPostModal()">__NEW_POST__</button>
 
 <div id="post-backdrop" class="modal-backdrop" style="display:none;" onclick="closePostModal()"></div>
 <div id="post-modal" class="window modal-window" role="dialog" aria-modal="true" aria-labelledby="post-modal-title"
      style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:600px; max-width:90vw; background:#000; z-index:1000; padding:30px; border: 1px solid #00ff66;">
-    <h3 id="post-modal-title">NEW BLOG POST</h3>
+    <h3 id="post-modal-title">__COMPOSE_TITLE__</h3>
 
-    <label for="post_title">Title:</label>
-    <input type="text" id="post_title" maxlength="__TITLE_MAX__" placeholder="A short, descriptive title" class="oj-inp" style="width:100%; margin-bottom:10px;" autocomplete="off">
+    <label for="post_title">__TITLE_LABEL__</label>
+    <input type="text" id="post_title" maxlength="__TITLE_MAX__" placeholder="__TITLE_PLACEHOLDER__" class="oj-inp" style="width:100%; margin-bottom:10px;" autocomplete="off">
 
-    <label for="post_description">Description (short summary shown in listings):</label>
-    <textarea id="post_description" maxlength="__DESC_MAX__" rows="2" placeholder="One or two sentences..." class="comment-input" style="width:100%; margin-bottom:4px;"></textarea>
+    <label for="post_description">__DESC_LABEL__</label>
+    <textarea id="post_description" maxlength="__DESC_MAX__" rows="2" placeholder="__DESC_PLACEHOLDER__" class="comment-input" style="width:100%; margin-bottom:4px;"></textarea>
     <div class="comment-form-row" style="margin-bottom:10px;"><span></span><span class="comment-counter" id="post_description_counter">0 / __DESC_MAX__</span></div>
 
-    <label for="post_content">Full post:</label>
-    <textarea id="post_content" maxlength="__CONTENT_MAX__" rows="8" placeholder="Write your full post here..." class="comment-input" style="width:100%; margin-bottom:4px;"></textarea>
+    <label for="post_content">__CONTENT_LABEL__</label>
+    <textarea id="post_content" maxlength="__CONTENT_MAX__" rows="8" placeholder="__CONTENT_PLACEHOLDER__" class="comment-input" style="width:100%; margin-bottom:4px;"></textarea>
     <div class="comment-form-row" style="margin-bottom:10px;"><span></span><span class="comment-counter" id="post_content_counter">0 / __CONTENT_MAX__</span></div>
 
     <div style="display: flex; gap: 10px; margin-top:10px;">
-        <button type="button" onclick="submitPost()" class="back-btn" style="flex:1;">Post</button>
-        <button type="button" onclick="closePostModal()" class="back-btn" style="flex:1; background:#333;">Cancel</button>
+        <button type="button" onclick="submitPost()" class="back-btn" style="flex:1;">__POST_BUTTON__</button>
+        <button type="button" onclick="closePostModal()" class="back-btn" style="flex:1; background:#333;">__CANCEL_BUTTON__</button>
     </div>
 </div>
 
@@ -2874,18 +3114,29 @@ async function submitPost() {
         showNotification(data.msg, data.success ? 'success' : 'error');
         if (data.success) setTimeout(function () { location.reload(); }, 800);
     } catch (e) {
-        showNotification('Error posting.', 'error');
+        showNotification('__POSTING_ERROR__', 'error');
     }
 }
 </script>'''
     return (tpl.replace("__TITLE_MAX__", str(BLOG_TITLE_MAX))
                .replace("__DESC_MAX__", str(BLOG_DESC_MAX))
-               .replace("__CONTENT_MAX__", str(BLOG_CONTENT_MAX)))
+               .replace("__CONTENT_MAX__", str(BLOG_CONTENT_MAX))
+               .replace("__NEW_POST__", t("blog.new_post"))
+               .replace("__COMPOSE_TITLE__", t("blog.compose_title"))
+               .replace("__TITLE_LABEL__", t("blog.compose_title_label"))
+               .replace("__TITLE_PLACEHOLDER__", t("blog.compose_title_placeholder"))
+               .replace("__DESC_LABEL__", t("blog.compose_desc_label"))
+               .replace("__DESC_PLACEHOLDER__", t("blog.compose_desc_placeholder"))
+               .replace("__CONTENT_LABEL__", t("blog.compose_content_label"))
+               .replace("__CONTENT_PLACEHOLDER__", t("blog.compose_content_placeholder"))
+               .replace("__POST_BUTTON__", t("blog.compose_post"))
+               .replace("__CANCEL_BUTTON__", t("blog.compose_cancel"))
+               .replace("__POSTING_ERROR__", t("blog.posting_error")))
 
 def build_acc_tabs(base_path, active_tab):
     """Tab strip (SUBMISSIONS / BLOG) shown next to the profile card on
     /frontend/account.html and /user/<username>."""
-    tabs = (("submissions", "SUBMISSIONS"), ("blog", "BLOG"))
+    tabs = (("submissions", t("account.tab_submissions")), ("blog", t("account.tab_blog")))
     parts = []
     for key, label in tabs:
         href = base_path if key == "submissions" else f"{base_path}?tab={key}"
@@ -2927,16 +3178,16 @@ def build_account_blog_tab(target_username, is_owner, page, base_path):
         for pid, title, desc, created_at, score in posts
     )
     if not cards:
-        cards = '<p class="comment-empty">No blog posts yet.</p>'
+        cards = f'<p class="comment-empty">{t("blog.no_posts_user")}</p>'
 
     def url_for_page(p):
         return f"{base_path}?tab=blog&page={p}"
     pagination_html = build_pagination(page, total_pages, url_for_page)
 
     composer = blog_composer_html() if is_owner else ""
-    guidelines = BLOG_GUIDELINES_HTML if is_owner else ""
+    guidelines = get_blog_guidelines_html() if is_owner else ""
 
-    return f'''<h2>BLOG</h2>
+    return f'''<h2>{t("blog.heading")}</h2>
         {guidelines}
         {composer}
         <div class="comment-list" style="margin-top:20px;">
@@ -2984,7 +3235,7 @@ def blog_feed():
         _, rank_color = get_rank_info(xp or 0, bool(admin_flag))
         cards += render_blog_card(pid, uname, dname, rank_color, title, desc, created_at, score, user_votes.get(pid, 0))
     if not cards:
-        cards = '<p class="comment-empty">No posts yet — be the first to share something!</p>'
+        cards = f'<p class="comment-empty">{t("blog.no_posts_feed")}</p>'
 
     def url_for_page(p):
         return "/blog?" + urlencode({"page": p})
@@ -2993,16 +3244,18 @@ def blog_feed():
     if u:
         composer = blog_composer_html()
     else:
-        composer = '<p class="comment-login-prompt"><span>Log in to write a post.</span><a href="/frontend/login.html" class="back-btn">Log In</a></p>'
+        composer = f'<p class="comment-login-prompt"><span>{t("blog.login_to_post")}</span><a href="/frontend/login.html" class="back-btn">{t("nav.login")}</a></p>'
 
     with open(os.path.join(D_F, "blog.html"), "r", encoding="utf-8") as f:
         h = f.read()
 
-    return h.replace("{{guidelines}}", BLOG_GUIDELINES_HTML)\
+    return h.replace("{{guidelines}}", get_blog_guidelines_html())\
             .replace("{{composer}}", composer)\
             .replace("{{posts}}", cards)\
             .replace("{{pagination}}", pagination_html)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/blog/<int:post_id>")
 def blog_post_page(post_id):
@@ -3031,7 +3284,15 @@ def blog_post_page(post_id):
     if u and u == uname:
         delete_post_btn = (
             f'<button type="button" id="delete-post-btn" class="comment-delete-btn" '
-            f'style="margin-top:0;" data-post-id="{post_id}">Delete Post</button>'
+            f'style="margin-top:0;" data-post-id="{post_id}">{t("blog.delete_post")}</button>'
+        )
+
+    # Any logged-in user (except author) can report a post.
+    report_post_btn = ""
+    if u and u != uname:
+        report_post_btn = (
+            f'<button type="button" id="report-post-btn" class="comment-report-btn" '
+            f'style="margin-top:0;" data-post-id="{post_id}">{t("blog.report_post")}</button>'
         )
 
     with open(os.path.join(D_F, "blog_post.html"), "r", encoding="utf-8") as f:
@@ -3046,13 +3307,16 @@ def blog_post_page(post_id):
             .replace("{{vote_up_active}}", " active" if user_vote == 1 else "")\
             .replace("{{vote_down_active}}", " active" if user_vote == -1 else "")\
             .replace("{{delete_post_btn}}", delete_post_btn)\
-            .replace("{{nav}}", nav_html(u))
+            .replace("{{report_post_btn}}", report_post_btn)\
+            .replace("{{nav}}", nav_html(u))\
+            .replace("{{lang}}", get_lang())\
+            .replace("</head>", get_cf_strings_script() + '<script src="/frontend/i18n/i18n.js"></script></head>', 1)
 
 @app.route("/api/blog/create", methods=["POST"])
 def create_blog_post():
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to post."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_post")}), 401
 
     data = request.json or {}
     title, err = moderate_blog_field(data.get("title", ""), BLOG_TITLE_MAX, "Title")
@@ -3073,26 +3337,26 @@ def create_blog_post():
         )
         new_id = cur.lastrowid
 
-    return jsonify({"success": True, "msg": "Post published!", "post_id": new_id})
+    return jsonify({"success": True, "msg": t("api.post_published"), "post_id": new_id})
 
 @app.route("/api/blog/vote", methods=["POST"])
 def vote_blog_post():
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to vote."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_vote")}), 401
 
     data = request.json or {}
     try:
         post_id = int(data.get("post_id"))
         vote = int(data.get("vote"))
     except (TypeError, ValueError):
-        return jsonify({"success": False, "msg": "Invalid vote."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_vote")}), 400
     if vote not in (1, -1):
-        return jsonify({"success": False, "msg": "Invalid vote."}), 400
+        return jsonify({"success": False, "msg": t("api.invalid_vote")}), 400
 
     with sqlite3.connect(DB_U) as c:
         if not c.execute("SELECT 1 FROM blog_posts WHERE id=?", (post_id,)).fetchone():
-            return jsonify({"success": False, "msg": "Post not found."}), 404
+            return jsonify({"success": False, "msg": t("api.post_not_found")}), 404
 
         existing = c.execute(
             "SELECT vote FROM blog_votes WHERE post_id=? AND username=?", (post_id, u)
@@ -3145,11 +3409,11 @@ def get_blog_comments(post_id):
 def post_blog_comment(post_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in to comment."}), 401
+        return jsonify({"success": False, "msg": t("api.login_to_comment")}), 401
 
     with sqlite3.connect(DB_U) as c:
         if not c.execute("SELECT 1 FROM blog_posts WHERE id=?", (post_id,)).fetchone():
-            return jsonify({"success": False, "msg": "Post not found."}), 404
+            return jsonify({"success": False, "msg": t("api.post_not_found")}), 404
 
     data = request.json or {}
     content, err = moderate_comment(data.get("content", ""))
@@ -3184,30 +3448,84 @@ def post_blog_comment(post_id):
 def delete_blog_comment(comment_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in."}), 401
+        return jsonify({"success": False, "msg": t("api.login_generic")}), 401
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT username FROM blog_comments WHERE id=?", (comment_id,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "Comment not found."}), 404
+            return jsonify({"success": False, "msg": t("api.comment_not_found")}), 404
         if row[0] != u:
-            return jsonify({"success": False, "msg": "You can only delete your own comments."}), 403
+            return jsonify({"success": False, "msg": t("api.delete_own_comments_only")}), 403
         c.execute("DELETE FROM blog_comments WHERE id=?", (comment_id,))
 
     return jsonify({"success": True})
+
+@app.route("/api/blog_comments/<int:comment_id>/report", methods=["POST"])
+def report_blog_comment(comment_id):
+    u = get_u()
+    if not u:
+        return jsonify({"success": False, "msg": t("api.login_to_report")}), 401
+
+    data = request.json or {}
+    reason = (data.get("reason") or "").strip()[:300]
+
+    with sqlite3.connect(DB_U) as c:
+        row = c.execute("SELECT username FROM blog_comments WHERE id=?", (comment_id,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "msg": t("api.comment_not_found")}), 404
+        if row[0] == u:
+            return jsonify({"success": False, "msg": t("api.cant_report_own")}), 400
+
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            c.execute(
+                "INSERT INTO blog_comment_reports (comment_id, reporter_username, reason, created_at, resolved) VALUES (?, ?, ?, ?, 0)",
+                (comment_id, u, reason, created_at)
+            )
+        except sqlite3.IntegrityError:
+            return jsonify({"success": False, "msg": t("api.already_reported")}), 400
+
+    return jsonify({"success": True, "msg": t("api.report_thanks")})
+
+@app.route("/api/blog/<int:post_id>/report", methods=["POST"])
+def report_blog_post(post_id):
+    u = get_u()
+    if not u:
+        return jsonify({"success": False, "msg": t("api.login_to_report")}), 401
+
+    data = request.json or {}
+    reason = (data.get("reason") or "").strip()[:300]
+
+    with sqlite3.connect(DB_U) as c:
+        row = c.execute("SELECT username FROM blog_posts WHERE id=?", (post_id,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "msg": t("api.post_not_found")}), 404
+        if row[0] == u:
+            return jsonify({"success": False, "msg": t("api.cant_report_own_post")}), 400
+
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            c.execute(
+                "INSERT INTO blog_post_reports (post_id, reporter_username, reason, created_at, resolved) VALUES (?, ?, ?, ?, 0)",
+                (post_id, u, reason, created_at)
+            )
+        except sqlite3.IntegrityError:
+            return jsonify({"success": False, "msg": t("api.already_reported_post")}), 400
+
+    return jsonify({"success": True, "msg": t("api.report_post_thanks")})
 
 @app.route("/api/blog/<int:post_id>/delete", methods=["POST"])
 def delete_blog_post(post_id):
     u = get_u()
     if not u:
-        return jsonify({"success": False, "msg": "Please log in."}), 401
+        return jsonify({"success": False, "msg": t("api.login_generic")}), 401
 
     with sqlite3.connect(DB_U) as c:
         row = c.execute("SELECT username FROM blog_posts WHERE id=?", (post_id,)).fetchone()
         if not row:
-            return jsonify({"success": False, "msg": "Post not found."}), 404
+            return jsonify({"success": False, "msg": t("api.post_not_found")}), 404
         if row[0] != u:
-            return jsonify({"success": False, "msg": "You can only delete your own posts."}), 403
+            return jsonify({"success": False, "msg": t("api.delete_own_posts_only")}), 403
 
         c.execute("DELETE FROM blog_comments WHERE post_id=?", (post_id,))
         c.execute("DELETE FROM blog_votes WHERE post_id=?", (post_id,))

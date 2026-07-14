@@ -51,10 +51,10 @@ document.addEventListener('click', async function (e) {
                 upBtn.textContent = data.voted ? '(Upvoted)' : '(Upvote)';
                 upBtn.classList.toggle('active', data.voted);
             } else {
-                showNotification(data.msg || 'Could not vote.', 'error');
+                showNotification(data.msg || t('usersolutions.vote_error'), 'error');
             }
         } catch (err) {
-            showNotification('Error voting.', 'error');
+            showNotification(t('usersolutions.voting_error'), 'error');
         }
         return;
     }
@@ -66,7 +66,7 @@ document.addEventListener('click', async function (e) {
         if (codeEl) {
             navigator.clipboard.writeText(codeEl.textContent).then(function () {
                 const original = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
+                copyBtn.textContent = t('usersolutions.copied');
                 setTimeout(function () { copyBtn.textContent = original; }, 1500);
             });
         }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
 
 <header>
     <h1>ChanceField</h1>
-    <p>> AUTHENTICATION REQUIRED</p>
+    <p>{{login.header}}</p>
 </header>
 
 <nav>
@@ -19,18 +19,18 @@
 </nav>
 
 <div class="window" style="max-width:500px;margin:100px auto;">
-    <h2>LOGIN</h2>
+    <h2>{{login.heading}}</h2>
 
-    <label for="login-username" class="sr-only">Username</label>
-    <input type="text" id="login-username" placeholder="Username" autocomplete="username" required>
+    <label for="login-username" class="sr-only">{{login.username_label}}</label>
+    <input type="text" id="login-username" placeholder="{{login.username_placeholder}}" autocomplete="username" required>
 
-    <label for="login-password" class="sr-only">Password</label>
-    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+    <label for="login-password" class="sr-only">{{login.password_label}}</label>
+    <input type="password" id="login-password" placeholder="{{login.password_placeholder}}" autocomplete="current-password" required>
 
-    <button type="button" onclick="handleLogin()">LOGIN</button>
+    <button type="button" onclick="handleLogin()">{{login.submit_button}}</button>
 
     <br><br>
-    <a href="/" class="back-btn">← Back Home</a>
+    <a href="/" class="back-btn">{{login.back_home}}</a>
 </div>
 
 <script>
@@ -43,7 +43,7 @@ async function handleLogin() {
     const passwordElement = document.getElementById('login-password');
 
     if (!usernameElement.value || !passwordElement.value) {
-        showNotification("Please enter both username and password.", "error");
+        showNotification("{{login.error_both_required}}", "error");
         return;
     }
 
@@ -61,14 +61,14 @@ async function handleLogin() {
 
         const result = await response.text();
         if (result === "7") {
-            showNotification("Login successful!", "success");
+            showNotification("{{login.success}}", "success");
             setTimeout(() => { window.location.href = "/"; }, 800); // Directs user back to main application entrypoint
         } else {
-            showNotification("Invalid credentials.", "error");
+            showNotification("{{login.error_invalid}}", "error");
         }
     } catch (error) {
         console.error("Error during authentication request:", error);
-        showNotification("Could not connect to the authentication server.", "error");
+        showNotification("{{login.error_connection}}", "error");
     }
 }
 </script>

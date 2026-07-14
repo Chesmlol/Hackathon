@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "description": "Practice problem translations keyed by initial_misions.id",
+    "fields": [
+      "title",
+      "statement"
+    ],
+    "schema_version": 1,
+    "total_problems": 40,
+    "source": "Step 2: populate from insert_practice_permutations.sql + insert_sage_problems.sql"
+  },
+  "perm_cat": {
+    "title": "Permutations of \"CAT\"",
+    "statement": "<p>Calculate the number of distinct permutations of the letters in the word “CAT”.</p>"
+  },
+  "perm_book": {
+    "title": "Permutations of \"BOOK\"",
+    "statement": "<p>Calculate the number of distinct permutations of the letters in the word “BOOK”.</p>"
+  },
+  "comb_committee_3of10": {
+    "title": "Choosing a Committee of 3",
+    "statement": "<p>Find the number of ways to choose 3 students from a class of 10 to form a committee.</p>"
+  },
+  "binom_coeff_x3_xy7": {
+    "title": "Coefficient of x³ in (x + y)⁷",
+    "statement": "<p>Find the coefficient of \\(x^3\\) in the expansion of \\((x + y)^7\\).</p>"
+  },
+  "stars_bars_nonneg_5": {
+    "title": "Non-negative Solutions to x₁+x₂+x₃=5",
+    "statement": "<p>Determine the number of non-negative integer solutions to the equation \\(x_1 + x_2 + x_3 = 5\\).</p>"
+  },
+  "pigeonhole_birth_month": {
+    "title": "Birth Month Pigeonhole",
+    "statement": "<p>In a group of 50 people, how many people must be selected to guarantee that at least 2 share the same birth month (assuming 12 months)?</p>"
+  },
+  "arrange_4_books": {
+    "title": "Arranging 4 Distinct Books",
+    "statement": "<p>Calculate the number of ways to arrange 4 distinct books on a shelf.</p>"
+  },
+  "binom_coeff_x2y4_xy6": {
+    "title": "Coefficient of x²y⁴ in (x + y)⁶",
+    "statement": "<p>Find the coefficient of \\(x^2y^4\\) in the expansion of \\((x + y)^6\\).</p>"
+  },
+  "balls_boxes_no_empty": {
+    "title": "Balls into Boxes (No Box Empty)",
+    "statement": "<p>In how many ways can 5 different balls be distributed into 3 different boxes such that no box is empty?</p>"
+  },
+  "coin_flips_6_heads": {
+    "title": "Coin Flips with Exactly 6 Heads",
+    "statement": "<p>A coin is flipped 10 times. How many sequences contain exactly 6 heads?</p>"
+  },
+  "sum_binom_coeff_n5": {
+    "title": "Sum of Binomial Coefficients (n = 5)",
+    "statement": "<p>Calculate the value of \\(\\sum_{k=0}^{5} \\binom{5}{k}\\).</p>"
+  },
+  "positive_int_solutions_4var": {
+    "title": "Positive Integer Solutions (4 Variables)",
+    "statement": "<p>How many positive integer solutions are there to \\(x_1 + x_2 + x_3 + x_4 = 10\\)?</p>"
+  },
+  "perm_mississippi": {
+    "title": "Permutations of \"MISSISSIPPI\"",
+    "statement": "<p>Find the number of permutations of the word “MISSISSIPPI”.</p>"
+  },
+  "binom_coeff_x4_1x10": {
+    "title": "Coefficient of x⁴ in (1 + x)¹⁰",
+    "statement": "<p>What is the coefficient of \\(x^4\\) in the expansion of \\((1 + x)^{10}\\)?</p>"
+  },
+  "pigeonhole_mod7": {
+    "title": "Pigeonhole: Same Remainder mod 7",
+    "statement": "<p>In a set of 100 integers, what is the minimum number of integers one must select to guarantee that two of them have the same remainder when divided by 7?</p>"
+  },
+  "candies_min_one_each": {
+    "title": "Distributing Candies with a Minimum Each",
+    "statement": "<p>Calculate the number of ways to distribute 6 identical candies to 3 distinct children such that each child gets at least 1 candy.</p>"
+  },
+  "functions_4_objects_2_boxes": {
+    "title": "Functions from 4 Objects to 2 Boxes",
+    "statement": "<p>If n distinct objects are placed into k distinct boxes, how many ways can this be done if \\(n = 4\\) and \\(k = 2\\)?</p>"
+  },
+  "sum_coeff_2x_3y_5": {
+    "title": "Sum of Coefficients in (2x − 3y)⁵",
+    "statement": "<p>Find the sum of the coefficients in the expansion of \\((2x - 3y)^5\\).</p>"
+  },
+  "committee_2men_2women": {
+    "title": "Committee with Exactly 2 Men and 2 Women",
+    "statement": "<p>A committee of 4 people is to be formed from 5 men and 5 women. How many ways can this be done if the committee must contain exactly 2 men and 2 women?</p>"
+  },
+  "prove_symmetry_identity": {
+    "title": "Proving C(n,k) = C(n, n−k)",
+    "statement": "<p>Prove that \\(\\binom{n}{k} = \\binom{n}{n-k}\\) for \\(n = 6\\), \\(k = 2\\) and provide the numerical result.</p>"
+  },
+  "sage_multiset_no_adj": {
+    "title": "Multiset Permutations, No Equal Letters Adjacent",
+    "statement": "<p>A word contains \\(a\\) copies of A, \\(b\\) copies of B, and \\(c\\) copies of C. Count the number of distinct permutations of the word in which no two equal letters are adjacent.<br><br><strong>Input:</strong> one line with three integers \\(a\\ b\\ c\\).<br><strong>Output:</strong> a single integer — the count.<br><br><strong>Example</strong><br>Input: <code>2 1 1</code><br>Output: <code>6</code></p>"
+  },
+  "sage_circular_arrangements": {
+    "title": "Circular Arrangements (up to Rotation)",
+    "statement": "<p>Given \\(n\\) distinct objects, count the number of distinct circular arrangements, where arrangements that differ only by rotation are considered the same.<br><br><strong>Input:</strong> one line with the integer \\(n\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>7</code><br>Output: <code>720</code></p>"
+  },
+  "sage_circular_not_adjacent": {
+    "title": "Circular Arrangements with a Forbidden Adjacency",
+    "statement": "<p>Given \\(n\\) distinct objects arranged on a circle (up to rotation), count the circular arrangements in which two particular distinguished objects are <em>not</em> adjacent.<br><br><strong>Input:</strong> one line with the integer \\(n\\) (\\(n \\ge 2\\)).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>6</code><br>Output: <code>48</code></p>"
+  },
+  "sage_multinomial_coeff": {
+    "title": "Multinomial Coefficient from an Expansion",
+    "statement": "<p>Find the coefficient of \\(x^a y^b z^c\\) in the expansion of \\((x+y+z)^n\\), where \\(a+b+c=n\\).<br><br><strong>Input:</strong> one line with four integers \\(n\\ a\\ b\\ c\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>8 3 2 3</code><br>Output: <code>560</code></p>"
+  },
+  "sage_bounded_stars_bars": {
+    "title": "Bounded Stars and Bars",
+    "statement": "<p>Count the number of nonnegative integer solutions to \\(x_1 + x_2 + \\cdots + x_k = n\\) subject to \\(x_i \\le u_i\\) for every \\(i\\).<br><br><strong>Input:</strong> the first line has the integer \\(n\\); the second line has the \\(k\\) upper bounds \\(u_1\\ u_2\\ \\ldots\\ u_k\\), space-separated.<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input:<br><code>7</code><br><code>2 3 4</code><br>Output: <code>5</code></p>"
+  },
+  "sage_surjections": {
+    "title": "Counting Surjections",
+    "statement": "<p>How many surjective (onto) functions are there from an \\(n\\)-element set to a \\(k\\)-element set?<br><br><strong>Input:</strong> one line with two integers \\(n\\ k\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>8 4</code><br>Output: <code>40824</code></p>"
+  },
+  "sage_set_partitions_k_blocks": {
+    "title": "Set Partitions into Exactly k Blocks",
+    "statement": "<p>Count the number of ways to partition an \\(n\\)-element set into exactly \\(k\\) nonempty, unlabeled subsets (a Stirling number of the second kind).<br><br><strong>Input:</strong> one line with two integers \\(n\\ k\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>9 3</code><br>Output: <code>3025</code></p>"
+  },
+  "sage_bell_number": {
+    "title": "Bell Numbers",
+    "statement": "<p>Compute the Bell number \\(B_n\\): the total number of ways to partition an \\(n\\)-element set into any number of nonempty, unlabeled subsets.<br><br><strong>Input:</strong> one line with the integer \\(n\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>8</code><br>Output: <code>4140</code></p>"
+  },
+  "sage_gaussian_binomial": {
+    "title": "Gaussian Binomial Coefficients",
+    "statement": "<p>Compute the number of \\(k\\)-dimensional subspaces of \\(\\mathbb{F}_q^n\\) (the Gaussian binomial coefficient \\(\\binom{n}{k}_q\\)).<br><br><strong>Input:</strong> one line with three integers \\(q\\ n\\ k\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>2 6 3</code><br>Output: <code>1395</code></p>"
+  },
+  "sage_derangements_r_fixed": {
+    "title": "Permutations with Exactly r Fixed Points",
+    "statement": "<p>Count the permutations of \\(\\{1, \\ldots, n\\}\\) that have exactly \\(r\\) fixed points.<br><br><strong>Input:</strong> one line with two integers \\(n\\ r\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>7 2</code><br>Output: <code>105</code></p>"
+  },
+  "sage_poisson_binomial": {
+    "title": "Poisson-Binomial: Exact Probability of k Successes",
+    "statement": "<p>Given independent Bernoulli trials with success probabilities \\(p_1, \\ldots, p_n\\), compute the exact probability of exactly \\(k\\) successes, as a reduced fraction.<br><br><strong>Input:</strong> the first line has the probabilities \\(p_1\\ p_2\\ \\ldots\\ p_n\\) as fractions, space-separated; the second line has the integer \\(k\\).<br><strong>Output:</strong> the exact probability as a reduced fraction (e.g. <code>11/24</code>).<br><br><strong>Example</strong><br>Input:<br><code>1/2 1/3 1/4</code><br><code>2</code><br>Output: <code>11/24</code></p>"
+  },
+  "sage_forced_nonempty_boxes": {
+    "title": "Onto Functions with Forced Nonempty Boxes",
+    "statement": "<p>Distribute \\(n\\) distinct balls into \\(k\\) distinct boxes so that every box ends up nonempty, where the first \\(t\\) boxes are additionally required to be nonempty.<br><br><strong>Input:</strong> one line with three integers \\(n\\ k\\ t\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>6 4 2</code><br>Output: <code>1560</code></p>"
+  },
+  "sage_mixed_gen_func_coeff": {
+    "title": "Coefficient from a Mixed Generating Function",
+    "statement": "<p>Find the coefficient of \\(x^a y^b\\) in \\((1 + x + x^2)^m (1+y)^n\\).<br><br><strong>Input:</strong> one line with four integers \\(m\\ n\\ a\\ b\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>4 5 3 2</code><br>Output: <code>120</code></p>"
+  },
+  "sage_ordered_bell": {
+    "title": "Ordered Bell (Fubini) Numbers",
+    "statement": "<p>Count the number of ordered set partitions of an \\(n\\)-element set (i.e. sequences of nonempty, disjoint blocks whose union is the whole set) — the ordered Bell / Fubini number.<br><br><strong>Input:</strong> one line with the integer \\(n\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>5</code><br>Output: <code>541</code></p>"
+  },
+  "sage_exactly_r_distinct": {
+    "title": "Exactly r Distinct Values Among n Draws",
+    "statement": "<p>An urn contains \\(m\\) labeled colors. Draw \\(n\\) balls independently with replacement. Count the number of sequences in which exactly \\(r\\) distinct colors appear.<br><br><strong>Input:</strong> one line with three integers \\(m\\ n\\ r\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>4 5 3</code><br>Output: <code>1440</code></p>"
+  },
+  "sage_restricted_compositions": {
+    "title": "Restricted Compositions via Generating Functions",
+    "statement": "<p>Count the number of integer solutions to \\(x_1 + \\cdots + x_k = n\\) where each \\(x_i\\) must belong to a prescribed finite set \\(S_i\\).<br><br><strong>Input:</strong> the first line has the integer \\(k\\) (number of variables); each of the next \\(k\\) lines lists the allowed values of \\(S_i\\), space-separated; the final line has the integer \\(n\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input:<br><code>3</code><br><code>0 1</code><br><code>1 2</code><br><code>0 2</code><br><code>3</code><br>Output: <code>3</code></p>"
+  },
+  "sage_perms_c_cycles": {
+    "title": "Permutations with a Given Number of Cycles",
+    "statement": "<p>Count the permutations of \\(n\\) elements that have exactly \\(c\\) cycles (an unsigned Stirling number of the first kind).<br><br><strong>Input:</strong> one line with two integers \\(n\\ c\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>6 2</code><br>Output: <code>274</code></p>"
+  },
+  "sage_binomial_tail": {
+    "title": "Binomial Tail Probability (Symbolic)",
+    "statement": "<p>Let \\(X \\sim \\text{Binomial}(n, p)\\). Compute \\(\\Pr[X \\ge k]\\) exactly as a reduced fraction (\\(p\\) is given as a fraction).<br><br><strong>Input:</strong> one line with \\(n\\ p\\ k\\), where \\(p\\) is written as a fraction like <code>1/2</code>.<br><strong>Output:</strong> the exact probability as a reduced fraction.<br><br><strong>Example</strong><br>Input: <code>5 1/2 3</code><br>Output: <code>5/16</code></p>"
+  },
+  "sage_binary_necklaces": {
+    "title": "Binary Necklaces (Burnside's Lemma)",
+    "statement": "Count binary necklaces of length \\(n\\) up to rotation. <br>Input: <code>8</code><br>Output: <code>36</code></p>"
+  },
+  "sage_necklaces_k_black": {
+    "title": "Binary Necklaces with a Fixed Number of Black Beads",
+    "statement": "<p>Count the binary necklaces of length \\(n\\) with exactly \\(k\\) black beads, up to rotation.<br><br><strong>Input:</strong> one line with two integers \\(n\\ k\\).<br><strong>Output:</strong> a single integer.<br><br><strong>Example</strong><br>Input: <code>10 3</code><br>Output: <code>12</code></p>"
+  }
+}

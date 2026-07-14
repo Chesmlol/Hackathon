@@ -10,3 +10,11 @@ __pycache__/
 
 # OS cruft
 .DS_Store
+
+# Stray/unused npm artifact (not part of the Python app)
+node_modules/
+package-lock.json
+
+# Internal AI coordination doc — not part of the shipped product
+AI_TRANSLATION_INSTRUCTIONS.md
+

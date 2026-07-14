@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await res.json();
             if (!data.success) {
                 if (typeof showNotification === 'function') {
-                    showNotification(data.msg || 'Please log in to vote.', 'error');
+                    showNotification(data.msg || t('js.login_to_vote'), 'error');
                 }
                 return;
             }
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (downBtn) downBtn.classList.toggle('active', data.user_vote === -1);
         } catch (err) {
             if (typeof showNotification === 'function') {
-                showNotification('Error casting vote.', 'error');
+                showNotification(t('js.vote_error'), 'error');
             }
         }
     });
@@ -38,26 +38,59 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!btn) return;
 
         const postId = btn.getAttribute('data-post-id');
-        if (!confirm('Delete this post? This cannot be undone.')) return;
+        if (!confirm(t('js.delete_post_confirm'))) return;
         btn.disabled = true;
         try {
             const res = await fetch(`/api/blog/${postId}/delete`, { method: 'POST' });
             const data = await res.json();
             if (data.success) {
                 if (typeof showNotification === 'function') {
-                    showNotification('Post deleted.', 'success');
+                    showNotification(t('js.post_deleted'), 'success');
                 }
                 window.location.href = '/blog';
             } else {
                 btn.disabled = false;
                 if (typeof showNotification === 'function') {
-                    showNotification(data.msg || 'Could not delete post.', 'error');
+                    showNotification(data.msg || t('js.delete_post_error'), 'error');
                 }
             }
         } catch (err) {
             btn.disabled = false;
             if (typeof showNotification === 'function') {
-                showNotification('Error deleting post.', 'error');
+                showNotification(t('js.delete_posting_error'), 'error');
+            }
+        }
+    });
+
+    document.body.addEventListener('click', async function (e) {
+        const btn = e.target.closest('#report-post-btn');
+        if (!btn) return;
+
+        const postId = btn.getAttribute('data-post-id');
+        const reason = prompt(t('js.report_post_prompt'));
+        if (reason === null) return;
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/blog/${postId}/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason || '' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showNotification === 'function') {
+                    showNotification(data.msg || t('comments.report_success'), 'success');
+                }
+            } else {
+                btn.disabled = false;
+                if (typeof showNotification === 'function') {
+                    showNotification(data.msg || t('js.report_post_error'), 'error');
+                }
+            }
+        } catch (err) {
+            btn.disabled = false;
+            if (typeof showNotification === 'function') {
+                showNotification(t('js.report_posting_error'), 'error');
             }
         }
     });

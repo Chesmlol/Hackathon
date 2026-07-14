@@ -13,7 +13,7 @@ DELETE FROM lessons WHERE title = 'Probabilistic Computation';
 DELETE FROM lessons WHERE title = 'Probabilistic Graphical Models';
 DELETE FROM lessons WHERE title = 'Modern Statistics for Computer Science';
 
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Models for Computer Science', 'Các mô hình xác suất: Bernoulli, Binomial, Geometric, Poisson, Normal, Exponential.', '', 'article', 'college', '<p><strong>Models for Computer Science</strong></p>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Models for Computer Science', 'Probability models: Bernoulli, Binomial, Geometric, Poisson, Normal, Exponential.', '', 'article', 'college', '<p><strong>Models for Computer Science</strong></p>', 'en'
 <p><strong>Bernoulli, Binomial, Geometric, Poisson, Normal, and
 Exponential</strong></p>
 <h1 id="introduction">Introduction</h1>
@@ -327,7 +327,7 @@ failures; the hint was that no calculation is needed because the
 interpretation directly gives the distribution.)</p></li>
 </ol>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Expectation, Variance, and Transformations of Random Variables', 'Kỳ vọng, phương sai và các phép biến đổi của biến ngẫu nhiên.', '', 'article', 'college', '<h1 class="unnumbered"
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Expectation, Variance, and Transformations of Random Variables', 'Expectation, variance, and transformations of random variables.', '', 'article', 'college', '<h1 class="unnumbered"
 id="expectation-variance-and-transformations-of-random-variables">Expectation,
 Variance, and Transformations of Random Variables</h1>
 <h2 class="unnumbered" id="expectation-mean">1. Expectation (Mean)</h2>
@@ -338,7 +338,7 @@ class="math display">\[\mathbb{E}[X]=\sum_{x} x\,p_X(x).\]</span> For a
 continuous random variable with probability density function <span
 class="math inline">\(f_X(x)\)</span>, <span
 class="math display">\[\mathbb{E}[X]=\int_{-\infty}^{\infty}
-x\,f_X(x)\,dx.\]</span></p>
+x\,f_X(x)\,dx.\]</span></p>', 'en'
 <p><strong>Example 1.</strong> Let <span
 class="math inline">\(S=\{1,0,1\}\)</span> (the multiset contains two
 1’s and one 0) and let <span class="math inline">\(X\)</span> be the
@@ -536,7 +536,7 @@ inputs (e.g., normalising features).</p></li>
 (packet arrivals, load balancing).</p></li>
 </ul>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Joint Distributions, Covariance, and Correlation', 'Phân phối đồng thời, hiệp phương sai và hệ số tương quan cho khoa học máy tính.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Joint Distributions, Covariance, and Correlation', 'Joint distributions, covariance, and correlation for computer science.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>In computer‑science applications (randomized algorithms, machine
 learning, networking, etc.) we often need to describe the behavior of
 several random quantities . This lecture notes on</p>
@@ -955,7 +955,7 @@ covariances,</p></li>
 probabilistic models in machine learning, performance evaluation of
 networks, and many other computer‑science contexts .</p>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Conditional Expectation and Variance Decomposition', 'Kỳ vọng có điều kiện và phân rã phương sai — ứng dụng trong quá trình ngẫu nhiên.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Conditional Expectation and Variance Decomposition', 'Conditional expectation and variance decomposition — applications in stochastic processes.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>In computer science, particularly in the analysis of randomized
 algorithms, queueing theory, machine learning (Bayesian inference), and
 network reliability, understanding the distribution of random variables
@@ -1399,7 +1399,7 @@ class="math inline">\(Y\)</span> represents the training data
 split.</p></li>
 </ol>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Law of Large Numbers and Central Limit Theorem', 'Luật số lớn và định lý giới hạn trung tâm — ứng dụng trong khoa học máy tính.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Law of Large Numbers and Central Limit Theorem', 'Law of large numbers and central limit theorem — applications in computer science.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>In computer science, particularly in areas such as randomized
 algorithms, machine learning, performance modeling, and network traffic
 analysis, we frequently deal with the aggregation of random variables.
@@ -1723,7 +1723,7 @@ distribution is not Normal (e.g., Poisson, Exponential,
 Bernoulli).</p></li>
 </ol>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Statistical Estimation in Computer Science', 'Ước lượng thống kê trong khoa học máy tính.', '', 'article', 'college', '<h1 id="introduction-to-statistical-estimation">Introduction to
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Statistical Estimation in Computer Science', 'Statistical estimation in computer science.', '', 'article', 'college', '<h1 id="introduction-to-statistical-estimation">Introduction to
 Statistical Estimation</h1>
 <p>In computer science, we frequently encounter problems where the
 underlying data generation process is unknown. We must infer properties
@@ -2143,7 +2143,7 @@ scientific contexts where "prior beliefs" are considered subjective
 noise.</p></li>
 </ol>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Confidence Intervals and Hypothesis Testing in Computer Science', 'Khoảng tin cậy và kiểm định giả thuyết — ứng dụng A/B testing, hiệu năng thuật toán.', '', 'article', 'college', '<h1 id="fundamental-concepts">Fundamental Concepts</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Confidence Intervals and Hypothesis Testing in Computer Science', 'Confidence intervals and hypothesis testing — A/B testing, algorithm performance.', '', 'article', 'college', '<h1 id="fundamental-concepts">Fundamental Concepts</h1>
 <h2 id="the-goal-of-inference">The Goal of Inference</h2>
 <p>In Computer Science, we often deal with populations that are too
 large to measure entirely (e.g., all users of a service, all possible
@@ -2555,7 +2555,7 @@ normal approximations are standard for general system monitoring and A/B
 testing with <span class="math inline">\(n &gt; 30\)</span>.</p></li>
 </ul>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Linear Regression and the Linear Model for Computer Science', 'Hồi quy tuyến tính và mô hình tuyến tính cho khoa học máy tính.', '', 'article', 'college', '<h1 id="introduction-to-the-linear-model">Introduction to the Linear
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Linear Regression and the Linear Model for Computer Science', 'Linear regression and linear model for computer science.', '', 'article', 'college', '<h1 id="introduction-to-the-linear-model">Introduction to the Linear
 Model</h1>
 <p>In computer science and data analysis, we frequently encounter the
 problem of predicting a target variable <span
@@ -2932,7 +2932,7 @@ significance.</p></li>
 added predictors are significant.</p></li>
 </ul>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Bayesian Inference and Posterior Reasoning for Computer Science', 'Suy luận Bayes và lập luận hậu nghiệm cho khoa học máy tính.', '', 'article', 'college', '<h1 id="foundations-of-bayesian-inference">Foundations of Bayesian
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Bayesian Inference and Posterior Reasoning for Computer Science', 'Bayesian inference and posterior reasoning for computer science.', '', 'article', 'college', '<h1 id="foundations-of-bayesian-inference">Foundations of Bayesian
 Inference</h1>
 <p>In computer science, particularly in machine learning and artificial
 intelligence, parameters of models are rarely fixed constants. Instead,
@@ -3084,7 +3084,7 @@ class="math display">\[\bar{\theta} = \int_0^{0.6} \theta \cdot
 (0.6).\]</span></em></p>
 </div>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Stochastic Processes for Computer Science', 'Quá trình ngẫu nhiên: chuỗi Markov, random walk, quá trình Poisson, martingale.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Stochastic Processes for Computer Science', 'Stochastic processes: Markov chains, random walk, Poisson processes, martingale.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>Stochastic processes are mathematical models used to describe systems
 that evolve randomly over time. In Computer Science, these models are
 fundamental for analyzing queueing systems (network traffic), randomized
@@ -3523,7 +3523,7 @@ stability.</p></li>
 <p>Mastery of these concepts allows computer scientists to design robust
 networks, efficient algorithms, and reliable distributed systems.</p>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Probabilistic Computation', 'Tính toán xác suất: Monte Carlo, importance sampling, MCMC, Gibbs sampling.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Probabilistic Computation', 'Probabilistic computation: Monte Carlo, importance sampling, MCMC, Gibbs sampling.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>Simulation methods are especially useful in Bayesian inference, a
 cornerstone of modern probabilistic computation in computer science.
 Given a prior <span class="math inline">\(f(\theta)\)</span> and data
@@ -3957,7 +3957,7 @@ the incomplete beta function. For larger <span class="math inline">\(n,
 m\)</span>, numerical integration or MCMC sampling from the Beta
 distribution is required.</p>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Probabilistic Graphical Models', 'Mô hình đồ thị xác suất — Bayesian networks và Markov random fields.', '', 'article', 'college', '<h1
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Probabilistic Graphical Models', 'Probabilistic graphical models — Bayesian networks and Markov random fields.', '', 'article', 'college', '<h1
 id="introduction-to-probabilistic-graphical-models-pgms">Introduction to
 Probabilistic Graphical Models (PGMs)</h1>
 <p>Probabilistic Graphical Models (PGMs) provide a powerful framework
@@ -4448,7 +4448,7 @@ polynomial).</p></li>
 core of machine learning, powered by the mathematical rigor of these
 models.</p>
 ');
-INSERT INTO lessons (title, description, link, type, difficulty, content) VALUES ('Modern Statistics for Computer Science', 'Thống kê hiện đại: Bootstrapping, ước lượng phi tham số và phân loại.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
+INSERT INTO lessons (title, description, link, type, difficulty, content, language) VALUES ('Modern Statistics for Computer Science', 'Modern statistics: Bootstrapping, nonparametric estimation and classification.', '', 'article', 'college', '<h1 id="introduction">Introduction</h1>
 <p>In modern data science and computer science, the assumptions of
 classical parametric statistics (e.g., normality, known variance
 structures) are often too restrictive for complex, high-dimensional, or

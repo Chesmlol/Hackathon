@@ -1,6 +1,13 @@
 .git
 **/__pycache__
-backend/*.db
+*.db
 *.pyc
 .DS_Store
 .env
+node_modules
+package-lock.json
+AI_TRANSLATION_INSTRUCTIONS.md
+translations/
+*.md
+Dockerfile
+.dockerignore

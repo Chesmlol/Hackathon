@@ -74,34 +74,36 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
+    flex-wrap: nowrap;
+    gap: 10px;
     max-width: 1300px;
     margin: 0 auto 40px;
     border: 2px solid #00ff66;
     background: rgba(0, 255, 100, 0.04);
     box-shadow: 0 0 16px rgba(0, 255, 100, 0.2);
-    padding: 14px 24px;
+    padding: 8px 16px;
+    overflow-x: auto;
 }
 
 .nav-left,
 .nav-right {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 14px;
+    flex-wrap: nowrap;
+    gap: 6px;
 }
 
 nav a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    white-space: nowrap;
+    min-height: 34px;
     text-decoration: none;
     color: #00ff66;
     border: 2px solid #00ff66;
-    padding: 10px 24px;
-    font-size: 1.2rem;
+    padding: 5px 12px;
+    font-size: 0.85rem;
     transition: 0.2s;
 }
 
@@ -895,26 +897,26 @@ body::after {
 }
 
 .nav-search-input {
-    width: 150px;
-    min-height: 44px;
+    width: 100px;
+    min-height: 34px;
     background: black;
     color: #00ff66;
     border: 2px solid #00ff66;
     border-right: none;
-    padding: 8px 12px;
+    padding: 5px 8px;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 0.8rem;
     margin-bottom: 0;
 }
 
 .nav-search-btn {
-    min-height: 44px;
-    padding: 8px 16px;
+    min-height: 34px;
+    padding: 5px 10px;
     background: black;
     border: 2px solid #00ff66;
     color: #00ff66;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     line-height: 1;
 }
 
@@ -924,7 +926,39 @@ body::after {
 }
 
 @media (max-width: 600px) {
-    .nav-search-input { width: 120px; }
+    .nav-search-input { width: 80px; }
+}
+
+/* ══════════════════════════════════════
+   Language switcher
+   ══════════════════════════════════════ */
+.lang-switcher {
+    display: flex;
+    gap: 4px;
+    margin-right: 6px;
+}
+
+.lang-btn {
+    background: black;
+    color: #00ff66;
+    border: 1px solid #00ff66;
+    padding: 5px 10px;
+    font-family: 'VT323', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.2s;
+    min-height: 34px;
+}
+
+.lang-btn:hover {
+    background: #00ff66;
+    color: black;
+}
+
+.lang-btn.active {
+    background: #00ff66;
+    color: black;
+    box-shadow: 0 0 8px rgba(0, 255, 100, 0.5);
 }
 
 /* ══════════════════════════════════════
